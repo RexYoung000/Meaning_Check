@@ -1,0 +1,28 @@
+{
+  "name": "meaning-check",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "packageManager": "pnpm@10.33.2",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "wxt",
+    "build": "wxt build",
+    "zip": "wxt zip",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "check:package": "node scripts/check-package.mjs",
+    "postinstall": "wxt prepare"
+  },
+  "devDependencies": {
+    "wxt": "0.21.4",
+    "typescript": "5.9.3",
+    "vitest": "5.0.4",
+    "@playwright/test": "1.64.0",
+    "@types/node": "^24.0.0",
+    "jsdom": "^29.0.0"
+  }
+}
