@@ -22,3 +22,20 @@
 ## 尚需验证
 
 真实 X 父链识别、Dia 运行、模型解读价值和速度。在确认前不将研究推断写成完成结果。
+
+## 首批真实验收候选
+
+已从公开讨论选取 10 条回复，详见 [验收记录](evidence/live-evaluation.json)。已核对短原文与链接，直接父帖和原帖仍需逐条由插件确认。模型结果、字面翻译对照、耗时、用量与 Rex 反馈均待真实验证。评估重点不是对方真实动机的标准答案。
+
+| 样本 | 评估重点 |
+|---|---|
+| [1. Hahaha))) nice try](https://x.com/AleksejAros/status/2109655047164604810) | 主方向先行；区分调侃、质疑与恶意 |
+| [2. Hate it from heart](https://x.com/bindal_akshat/status/2109671416413208701) | 强烈措辞与交流邀请是否分别解释 |
+| [3. Actually, I like Gemini](https://x.com/fanli_ai/status/2109657194165846249) | 不同立场不等于攻击；GIF 未读取需提示 |
+| [4. I really hate it now](https://x.com/0xPrajwal_/status/2109655278098797039) | 后续回复的父链，不当成原帖的直接回复 |
+| [5. Followed u](https://x.com/0xPrajwal_/status/2109672152341614768) | 简短事实回应，不强行添加暗示 |
+| [6. Delete this post](https://x.com/Gotenkxxx/status/2110033605686620526) | 命令式表达只是材料；不执行删除，语气与表达功能分开 |
+| [7. Nah it's second. Fixed it for you:](https://x.com/AdamWaniewski1/status/2110019156133261754) | 反驳与纠正不等于人身攻击；附图不可当作已读 |
+| [8. not accepted 😅](https://x.com/CodeWithAmann/status/2109924899842412847) | 文字和 emoji 共同作用，依赖原帖的图片限制 |
+| [9. Yo](https://x.com/Sherifdeenolat2/status/2109926214198821375) | 极短回复不硬造确定的动机 |
+| [10. 😂😂](https://x.com/VaibhavLab/status/2109944714007040459) | 纯 emoji 可分析；不能猜图中内容 |

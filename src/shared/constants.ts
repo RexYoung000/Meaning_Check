@@ -1,0 +1,12 @@
+export const MODEL = 'deepseek-flash';
+export const MODEL_LABEL = 'DeepSeek V4.1 Flash';
+export const API_URL = 'https://api.deepseek.com/chat/completions';
+export const INPUT_LIMIT = 12_000;
+export const CONTEXT_TIMEOUT_MS = 30_000;
+export const MAX_ANCESTORS = 10;
+export const ANALYSIS_TIMEOUT_MS = 60_000;
+export const HEADERS_TIMEOUT_MS = 25_000;
+export const HEARTBEAT_MS = 15_000;
+export const PORT_PREFIX = 'meaning-check:';
+export const COLLECTOR_PARAM = 'mc-collector';
+export const ROLE_LABELS = { current: '当前回复', parent: '直接父帖', root: '原帖' } as const;

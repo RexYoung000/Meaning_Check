@@ -1,0 +1,85 @@
+{
+  "scope": "实际插件 + 隔离 Chromium；X 和 DeepSeek 为模拟夹具",
+  "unitIntegration": {
+    "passed": 54,
+    "failed": 0
+  },
+  "browser": {
+    "passed": 14,
+    "failed": 0,
+    "scenarios": [
+      {
+        "name": "未配置时引导设置；悬停不调用、不打开补齐页",
+        "passed": true
+      },
+      {
+        "name": "补齐原帖、父根去重、结果有真实引文，原 X 操作保留",
+        "passed": true
+      },
+      {
+        "name": "缺上下文须用户选择后才分析，可明确手动补齐",
+        "passed": true
+      },
+      {
+        "name": "缺上下文可选择部分分析，缺失提示保留",
+        "passed": true
+      },
+      {
+        "name": "动态新增与导航、窄窗与键盘关闭",
+        "passed": true
+      },
+      {
+        "name": "模型无效依据不展示结论、不自动重试",
+        "passed": true
+      },
+      {
+        "name": "结果文字不能成为可执行 HTML",
+        "passed": true
+      },
+      {
+        "name": "双击只发一次，关闭分析后没有过期结果",
+        "passed": true
+      },
+      {
+        "name": "取消补齐清理自建页，用户页面继续保留",
+        "passed": true
+      },
+      {
+        "name": "明暗主题使用真实插件浮层并保存验收截图",
+        "passed": true
+      },
+      {
+        "name": "本地保存不回显、内容脚本无密钥访问权、删除后停止请求",
+        "passed": true
+      },
+      {
+        "name": "后台重启不会丢失待补充文字，也不自动调用模型",
+        "passed": true
+      },
+      {
+        "name": "超长输入先拒绝，用户缩减后才调用模型",
+        "passed": true
+      },
+      {
+        "name": "纯 emoji 回复也有入口并保留原文依据",
+        "passed": true
+      }
+    ]
+  },
+  "typecheck": "passed",
+  "build": "passed",
+  "packageCheck": "passed",
+  "manifestSha256": "f5c58e723b507865206b491111c32af0f362eaddaf8217067b8198d3645cdad7",
+  "dia": {
+    "installed": true,
+    "version": "0.1.0",
+    "fullRuntimeVerified": false,
+    "limitation": "后续实际页面交互被保护中断"
+  },
+  "liveModel": {
+    "calls": 0,
+    "verified": false,
+    "requires": "本地设置页配置及真实页面操作"
+  },
+  "evidence": "mock fixture results are not model quality evidence"
+}

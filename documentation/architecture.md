@@ -14,7 +14,9 @@ InterpretationResult 包含 summary、tone、function、1–2 条 evidence（sou
 
 ## X 上下文
 
-优先使用明确父链接或详情页的已加载祖先链；不将首页的相邻帖子、引用帖或回复列表当作父链。无法可靠定位时为缺失。按需开 active:false 临时标签页，复用当前登录但不读取 cookie；最多 10 层 / 30 秒，成功、取消、失败、后台重启均清理。仅 session 存任务 ID、临时页 ID 与期限，不持久化帖子或结果。
+读取正文时排除本插件节点和已识别的沉浸式翻译译文节点，保留英文原文作为引用依据；不修改第三方插件状态。Chrome 消息采用兼容的回调响应，取消信号在任务结束后解绑。
+
+等待详情页的帖子加载标识消失，再使用明确父链接或已加载祖先链；初始只有焦点帖的页面不能提前判为原帖。不将首页的相邻帖子、引用帖或回复列表当作父链。无法可靠定位时为缺失。按需开 active:false 临时标签页，复用当前登录但不读取 cookie；最多 10 层 / 30 秒，成功、取消、失败、后台重启均清理。仅 session 存任务 ID、临时页 ID 与期限，不持久化帖子或结果。
 
 ## Provider 与配置
 
@@ -24,7 +26,7 @@ POST https://api.deepseek.com/chat/completions，model deepseek-flash；thinking
 
 ## 故障
 
-缺密钥引导设置；缺上下文等待用户选择；超限要求缩减；无效 JSON、证据不匹配、HTTP 错误、超时不展示结论。只提供用户主动重试。关闭 / 导航 / 切换对象断开连接并取消请求，不回放旧结果。
+缺密钥引导设置；缺上下文等待用户选择；超限要求缩减；无效 JSON、证据不匹配、HTTP 错误、超时不展示结论。只提供用户主动重试。关闭 / 导航 / 切换对象断开连接并取消请求，不回放旧结果。结果与待补充内容仅保留在当前页面内存；后台空闲断开不清除卡片，用户下一次主动操作时重连并重新校验当前材料，不自动重发。临时页先登记，再导航到 X。
 
 ## 依据与相关文档
 
@@ -33,4 +35,4 @@ POST https://api.deepseek.com/chat/completions，model deepseek-flash；thinking
 - [DeepSeek 接口](https://api-docs.deepseek.com/api/create-chat-completion/)
 - [产品规则](product.md)、[设计](../DESIGN.md)、[测试](tests.md)、[研究](research.md)、[入口](../README.md)、[协作规则](../AGENTS.md)
 
-当前上述为意图设计，尚无运行证据；限制与实际差异在实现后回写。
+以上能力已有实现，自动化证据见 tests.md。X 祖先关联依赖两套 DOM 适配：现代 data-timeline-entry 与经典 primaryColumn / tweet。无法确认的关联不猜测；实际 Dia / X 适配仍待完成运行验证。
