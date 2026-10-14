@@ -369,7 +369,7 @@
   "archiveSha256": "73f196d3052675cf7fbb37c46dbc27877529f06f361cab4c2f25f73a7dcba78a",
   "publication": {
     "repository": "https://github.com/RexYoung000/Meaning_Check",
-    "status": "public-source-update-prepared",
+    "status": "public-source-pushed",
     "visibility": "public",
     "license": "MIT",
     "bilingualReadmesVerified": true,
@@ -385,7 +385,9 @@
     "storeRelease": false,
     "githubRelease": false,
     "priorSourceFixCommit": "4d0043f5481dfa1394babe6ce18b0ec752ab8b96",
-    "sourceFixVersion": "0.3.3"
+    "sourceFixVersion": "0.3.3",
+    "sourceFixCommit": "3caf95ab231d059119d6857b4fcb619d7a1784e8",
+    "profileUpdatedButtonNameVerified": true
   },
   "credentialPreflight": {
     "historicalTextBlobsScanned": 174,
