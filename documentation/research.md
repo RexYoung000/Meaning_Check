@@ -39,3 +39,9 @@
 | [8. not accepted 😅](https://x.com/CodeWithAmann/status/2109924899842412847) | 文字和 emoji 共同作用，依赖原帖的图片限制 |
 | [9. Yo](https://x.com/Sherifdeenolat2/status/2109926214198821375) | 极短回复不硬造确定的动机 |
 | [10. 😂😂](https://x.com/VaibhavLab/status/2109944714007040459) | 纯 emoji 可分析；不能猜图中内容 |
+
+## 2026-10-14 对齐结论
+
+用户确认开源 MIT / BYOK、九家官方厂商与自定义接口；图标和常驻完整文本按钮、工具栏及一次引导降低开启与使用成本。浏览器扩展页面无法靠网页翻译器翻译的问题以自身中英界面解决，输出语言另跟随浏览器完整语言或手选。X / Reddit 默认启用，自定义网页采用主动选区，不引入整页采集。
+
+DeepSeek V4.1 Flash 对应 deepseek-flash；Grok 4.6 与 4.7 同时保留。官方最新型号和接口来源集中在 models.md，阅读目录并不证明账号权限或真实质量。
