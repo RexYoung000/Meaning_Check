@@ -14,7 +14,13 @@ SiteConfig 保存来源 origin、路径列表与 enabled；多个路径为 OR，
 
 ## 数据及模型接口
 
-ContextBundle 保留 current / parent / root 引用、去重来源、缺项、警告和 thread / selection 模式；Post.origin 区分 x、reddit、web、manual。选中文字仅包含用户选区和可选手动背景，不能伪造自动父链。
+ContextBundle 保留 current / parent / root 引用、去重来源、缺项、警告和 thread / selection / post 模式；Post.origin 区分 x、reddit、web、manual。选中文字仅包含用户选区和可选手动背景，不能伪造自动父链。
+
+0.3.1 新增 post 模式：parentState=none 转为仅含 current、missing=[] 的独立帖材料，角色不适用不等于缺失。重连及手动补充继续保留模式，模型提示明确当前内容为帖子或回复。X 正文展开控件必须属于主正文，排除隐藏、媒体、引用、翻译器及插件节点；上下文关系依据原生父链和焦点详情结构识别，未知保持未知。临时页不因无关区域的加载标记无限等待，稳定文本的关系未知可返回明确缺项；稳定但未展开的正文也及时返回其展开状态，保留已经识别的父链，不因此占满补齐超时。
+
+parentState=unlinked 表示时间线没有可见回复关联，转为 post 模式并保留 relation=unconfirmed；none 才是 relation=standalone。不能在其他帖子的详情页复用相邻推荐帖作为独立帖或父帖。分析前更新页面可见的既有来源；只有角色仍引用原来源时替换，手动来源不被覆盖。终态事件在清理及 busy 复位后发送，避免用户看到操作按钮后新命令被旧周期静默丢弃。
+
+每次主动操作先发准备阶段，完成输入校验及配置后再发模型分析阶段；计时从该执行周期开始，排队计时单独维护。事件不能在上一周期清理未完成时把用户的新操作静默忽略。
 
 统一分析入口接受 bundle、当前连接、输出语言及取消信号。官方预置除 Claude 使用原生 Messages 外，使用厂商官方 Chat Completions 兼容接口；自定义连接支持 Chat Completions、Responses、Messages。参数按协议和厂商发送，不能把 DeepSeek 专用字段发给所有服务。流式仅用于接收，校验通过后才展示结果，丢弃思考内容。
 
@@ -28,7 +34,7 @@ ContextBundle 保留 current / parent / root 引用、去重来源、缺项、�
 
 临时页以 token / 过期时间登记到 storage.session；后台重启清理归属明确的页，用户已导航的页保留。设置变更对下次模型请求生效，不重算现有结果。首次安装 / 首次升级引导使用本地版本标记，避免每次启动重复打开。
 
-## 0.3 实现入口
+## 0.3.1 实现入口
 
 shared/settings.ts 负责可信存储与迁移；shared/models.ts 为型号源，shared/i18n.ts 为界面文案源，shared/sites.ts 判定来源 / 路径及排除已知私信和编辑入口。ui/reader.ts 复用 X / Reddit 适配与卡片；selection.content.ts 按用户站点授权动态注册。后台对公开配置、可信设置命令和网页分析端口分别核验，不向网页返回密钥。
 

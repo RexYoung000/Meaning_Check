@@ -21,14 +21,20 @@ interface Reading {
 export function startReader(ctx:ContentScriptContext,selectionOnly=false):void {
   if(window.__meaningCheckReader)return;window.__meaningCheckReader=true;
   const adapter=location.hostname==='x.com'?x:reddit;
-  const selector=location.hostname==='x.com'?x.ARTICLE_SELECTOR:reddit.COMMENT_SELECTOR;
+  const selector=location.hostname==='x.com'?x.ARTICLE_SELECTOR:reddit.ITEM_SELECTOR;
   const token=new URL(location.href).searchParams.get(COLLECTOR_PARAM);
   if(token&&!selectionOnly){
+    const expanded=new Map<string,number>();
     const listener=(message:any,sender:Browser.runtime.MessageSender,sendResponse:(value?:unknown)=>void)=>{
       if(sender.id!==browser.runtime.id||sender.tab||message?.type!=='collect-snapshot'||message.token!==token)return;
       const target=threadRef(message.url??'');if(!target||threadRef(location.href)?.id!==target.id)return;
       const article=[...document.querySelectorAll(selector)].find(a=>adapter.readPost(a)?.id===target.id);
-      const more=location.hostname==='x.com'&&article?x.showMoreElement(article):undefined;if(more){more.click();return;}
+      const more=location.hostname==='x.com'&&article?x.showMoreElement(article):undefined;
+      if(more&&!more.hasAttribute('href')){
+        const attempted=expanded.get(target.id);
+        if(attempted===undefined){expanded.set(target.id,Date.now());more.click();return;}
+        if(Date.now()-attempted<750)return;
+      }
       sendResponse(adapter.readPageSnapshot(document,target.url));return false;
     };
     browser.runtime.onMessage.addListener(listener);ctx.addEventListener(window,'pagehide',()=>browser.runtime.onMessage.removeListener(listener));ctx.onInvalidated(()=>browser.runtime.onMessage.removeListener(listener));return;
@@ -50,7 +56,7 @@ export function startReader(ctx:ContentScriptContext,selectionOnly=false):void {
   const send=(job:Reading,command:ClientCommand)=>{
     if(job.busy)return;if(!job.port&&!connect(job))return;
     job.busy=true;stopHeartbeat(job);
-    job.card.phase(command.type==='analyze'?'analysis':'context');
+    job.card.phase('preparing');
     job.heartbeat=setInterval(()=>{try{job.port?.postMessage({type:'heartbeat'});}catch{stopHeartbeat(job);}},HEARTBEAT_MS);
     try{job.port!.postMessage(command);}catch{job.busy=false;stopHeartbeat(job);job.card.error('background-restarted','连接已断开。');}
   };
@@ -72,7 +78,7 @@ export function startReader(ctx:ContentScriptContext,selectionOnly=false):void {
   }
   const start=(article:HTMLElement,trigger:HTMLButtonElement,selection?:string)=>{
     if(!allowed())return;
-    if(!selection&&location.hostname==='x.com')x.showMoreElement(article)?.click();
+    if(!selection&&location.hostname==='x.com'){const more=x.showMoreElement(article);if(more&&!more.hasAttribute('href'))more.click();}
     const post:Post|undefined=selection?{id:'selection',url:location.href,text:selection,hasMedia:false,truncated:false,origin:'web'}:adapter.readPost(article);
     if(!post)return;
     const key=selection?'selection:'+selection:post.url;
@@ -82,8 +88,19 @@ export function startReader(ctx:ContentScriptContext,selectionOnly=false):void {
     const job={} as Reading;
     Object.assign(job,{key,article,post,selection:!!selection,trigger,busy:false});
     job.card=new ResultCard(mount,styles,{
-      close:()=>close(job),retryContext:()=>send(job,{type:'start',post:job.post,...(job.selection?{selection:true}:{})}),
-      analyze:manual=>send(job,{type:'analyze',bundle:job.bundle,manual}),settings,
+      close:()=>close(job),retryContext:()=>{
+        const fresh=job.selection?job.post:adapter.readPost(job.article);if(fresh?.id===job.post.id)job.post=fresh;
+        send(job,{type:'start',post:job.post,...(job.selection?{selection:true}:{snapshot:adapter.readPageSnapshot(document,job.post.url)})});
+      },
+      analyze:manual=>{
+        // Refresh only the already-selected sources; never override a manual edit.
+        if(job.bundle&&!job.selection){
+          const visible=[...document.querySelectorAll(selector)].map(el=>adapter.readPost(el)).filter((p):p is Post=>!!p);
+          job.bundle={...job.bundle,posts:job.bundle.posts.map(p=>p.origin==='manual'?p:visible.find(latest=>latest.id===p.id)??p)};
+          const fresh=visible.find(p=>p.id===job.post.id);if(fresh)job.post=fresh;
+        }
+        send(job,{type:'analyze',bundle:job.bundle,manual});
+      },settings,
     },lang());
     readings.set(key,job);
     send(job,{type:'start',post,...(selection?{selection:true}:{snapshot:adapter.readPageSnapshot(document,post.url)})});

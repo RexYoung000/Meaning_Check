@@ -63,3 +63,27 @@ describe('上下文范围与补齐', () => {
     expect(()=>validatePost({...reply,url:'https://evil.example/person/status/3'})).toThrow(); expect(()=>validatePost({...reply,id:'4'})).toThrow(); expect(validateSnapshot({current:reply,parentState:'none'},'4')).toBeUndefined();
   });
 });
+
+describe('不适用的上下文与未确认关系',()=>{
+ it('独立原帖直接返回 post 模式，没有虚构缺项',async()=>{
+  const read=vi.fn();const resolved=await resolveContext(root,{current:root,parentState:'none'},read,new AbortController().signal);
+  expect(resolved.bundle).toMatchObject({mode:'post',relation:'standalone',roles:{current:root.id},missing:[]});expect(read).not.toHaveBeenCalled();
+ });
+ it('时间线只读本条保留未确认关系，重连和手动背景不丢模式',async()=>{
+  const resolved=await resolveContext(reply,{current:reply,parentState:'unlinked'},vi.fn(),new AbortController().signal);
+  const manual=applyManual(resolved.bundle,{root:'Optional background'}),validated=validateBundle(manual);
+  expect(validated).toMatchObject({mode:'post',relation:'unconfirmed',missing:[],roles:{root:'manual-root'}});
+ });
+ it('未知关系不同于已确认回复缺父帖',async()=>{
+  const unknown=await resolveContext(reply,{current:reply,parentState:'unknown',replyKnown:false},vi.fn(),new AbortController().signal);
+  const actualReply=await resolveContext(reply,{current:reply,parentState:'unknown',replyKnown:true},vi.fn(),new AbortController().signal);
+  expect(unknown.bundle.contextIssue).toBe('unconfirmed-relation');expect(actualReply.bundle.contextIssue).toBeUndefined();expect(actualReply.bundle.missing).toEqual(['parent','root']);
+ });
+ it('无法展开的文字保留可取得的父链，不能全部伪装成上下文缺失',async()=>{
+  const incomplete={...reply,truncated:true};const resolved=await resolveContext(incomplete,{current:incomplete,parent:root,parentState:'known'},async()=>({current:root,parentState:'none'}),new AbortController().signal);
+  expect(resolved.bundle.missing).toEqual([]);expect(resolved.bundle.posts[0]?.truncated).toBe(true);expect(()=>assertInputSize(resolved.bundle)).toThrow('展开');
+ });
+ it('独立帖模式不接受网页伪造的自动父帖和原帖角色',()=>{
+  expect(()=>validateBundle({...bundleOf(reply,root,root),mode:'post',relation:'standalone'})).toThrow();
+ });
+});

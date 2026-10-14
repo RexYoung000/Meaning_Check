@@ -9,11 +9,11 @@ export interface SiteConfig { id:string; name:string; origin:string; paths:strin
 export interface Preferences { enabled:boolean; uiLanguage:'auto'|UiLanguage; outputLanguage:string; sites:SiteConfig[] }
 export interface PublicConfig { preferences:Preferences; profiles:PublicProfile[]; activeProfileId:string; configured:boolean; uiLanguage:UiLanguage; outputLanguage:string }
 export interface Post { id:string; url:string; text:string; hasMedia:boolean; truncated:boolean; origin:'x'|'reddit'|'web'|'manual' }
-export interface ContextBundle { roles:{current:string;parent?:string;root?:string};posts:Post[];missing:MissingRole[];warnings:string[];mode?:'thread'|'selection' }
-export interface PageSnapshot { current:Post;parent?:Post;parentState:'known'|'none'|'unknown' }
+export interface ContextBundle { roles:{current:string;parent?:string;root?:string};posts:Post[];missing:MissingRole[];warnings:string[];mode?:'thread'|'selection'|'post';relation?:'standalone'|'unconfirmed';contextIssue?:'unconfirmed-relation' }
+export interface PageSnapshot { current:Post;parent?:Post;parentState:'known'|'none'|'unknown'|'unlinked';replyKnown?:boolean }
 export interface Evidence { sourceId:string;quote:string;explanation:string }
 export interface InterpretationResult { status:'ready'|'needs_context';summary:string;tone:string;function:string;evidence:Evidence[];uncertainty?:string }
 export interface Usage { promptTokens:number;completionTokens:number;totalTokens:number }
 export interface AnalysisResponse { result:InterpretationResult;elapsedMs:number;usage?:Usage;model?:string;language?:string }
 export type ClientCommand = {type:'start';post:Post;snapshot?:PageSnapshot;selection?:boolean} | {type:'retry-context'} | {type:'analyze';bundle?:ContextBundle;manual?:Partial<Record<ContextRole,string>>} | {type:'heartbeat'} | {type:'cancel'};
-export type JobEvent = {type:'queued';position:number;queuedAt:number} | {type:'phase';phase:'context'|'analysis';startedAt:number} | {type:'context';bundle:ContextBundle;reason?:string} | {type:'result';bundle:ContextBundle;response:AnalysisResponse} | {type:'error';code:string;message:string;bundle?:ContextBundle};
+export type JobEvent = {type:'queued';position:number;queuedAt:number} | {type:'phase';phase:'preparing'|'context'|'analysis';startedAt:number} | {type:'context';bundle:ContextBundle;reason?:string} | {type:'result';bundle:ContextBundle;response:AnalysisResponse} | {type:'error';code:string;message:string;bundle?:ContextBundle};

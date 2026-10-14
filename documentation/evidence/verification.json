@@ -1,18 +1,18 @@
 {
-  "version": "0.3.0",
+  "version": "0.3.1",
   "date": "2026-10-14",
   "scope": "Actual extension in isolated Chrome for Testing 156; X / Reddit / custom pages and APIs are mocked",
   "unitIntegration": {
-    "passed": 80,
+    "passed": 92,
     "failed": 0
   },
   "browser": {
-    "passed": 30,
+    "passed": 36,
     "failed": 0,
     "runs": [
       {
-        "command": "pnpm exec playwright test --max-failures=2",
-        "passed": 30,
+        "command": "pnpm exec playwright test --max-failures=3",
+        "passed": 36,
         "failed": 0
       }
     ],
@@ -136,6 +136,30 @@
       {
         "name": "自定义网站仅采集选区，背景可选，删除后移除入口",
         "passed": true
+      },
+      {
+        "name": "独立详情与时间线帖子直接解读，披露实际范围，不创建补齐页",
+        "passed": true
+      },
+      {
+        "name": "正文未展开单独提示；展开后重试更新文字和动效计时",
+        "passed": true
+      },
+      {
+        "name": "缺父链选择现有内容分析，重新读取当前文字并显示加载",
+        "passed": true
+      },
+      {
+        "name": "失败后主动重试重新显示计时，仅两次明确用户请求",
+        "passed": true
+      },
+      {
+        "name": "未确认关系与缺父链分别提示",
+        "passed": true
+      },
+      {
+        "name": "Reddit 根帖直接按独立帖子解读",
+        "passed": true
       }
     ]
   },
@@ -143,32 +167,32 @@
   "build": "passed",
   "zip": "passed",
   "packageCheck": "passed",
-  "manifestSha256": "56b523f5b25772265d78f41b3a1edf9377ec285755b5b3275010aa56702c00bc",
+  "manifestSha256": "b0a095bff6e2c23593bd71f261b40b3bf9ce1efbb3f8f3609f6e6bbf7328c149",
   "buildFilesSha256": {
     "LICENSE.txt": "656bb9238233d88cdaf95b96d21fb696ba553c522503411711be72897b040f86",
     "_locales/en/messages.json": "20d6cf944f70b854e38e3534f0f134729fce7dddf1d8cc7cafd0463488082b7c",
     "_locales/zh_CN/messages.json": "57ee1c2149dbcb1ac2828226334b3b05daf214419eb0086abedc1371d24a0689",
     "assets/options-DiqgAPxV.css": "7e5fd39eb24176f80dd64a93d16994e9bd86548d546281746cb3aee63b9d52bd",
-    "background.js": "f7649d4b46633ae99f0ae8876a0f44ff1b784e302a850eca2f74958ab4794866",
+    "background.js": "ac685852946a8c13c1cb71afd831216d931b16510058bebb24c85791f22f827f",
     "chunks/models-CTRIWj60.js": "01f4f4de3350c0a0b8dac43ef6f47af316dbc3038d7c473ea670023020477636",
-    "chunks/navigation-DcZK7HCr.js": "8fdd9666170bbe02656bc73bc6451294506d87899b7ec7a0374ca0ae1a10ffe6",
-    "chunks/options-CubgL6Ko.js": "3f8b2c2ba3c066e186767747ed31ae55661cde9aa15acde76205e9b9757aa2ed",
-    "chunks/page-BvyqPXsl.js": "1a308aafa003b1304ee37ff2d907d76a8d9e0d0f840122fd8d70f62a81b9a8aa",
-    "chunks/popup-BJeZ-3m0.js": "209b79b86e0a080843932148dd868a593dad2025acf73bc3e39cd466002b5cee",
-    "chunks/welcome-DjzADdj5.js": "6d0537c66ff935f11cc6f76ab755e7906382702de63e80d7ee1d1464ac3f0433",
-    "content-scripts/selection.js": "ecf5f26bd67d977e3bbecca9e041444ff7eabe9ab2d996a3386ae0a8d9f0e6ef",
-    "content-scripts/x.js": "7b7b5775cf44cb77f172dea94d22178d1830f563a5f1188e6dedf31a18fd75ef",
+    "chunks/navigation-CDMvCuwx.js": "a3913ab54050bcb4ffd9e30b0c82b491ae56281f050e2c92dcbfdf457a7781ff",
+    "chunks/options-EJARtPcS.js": "0f9a72d5c13fa26a8b254e6e51ed79a6c7eec974d7de96ea3c3e921a91f91fb4",
+    "chunks/page-C3dKd1i2.js": "e481c3cd6037efc1de68787df34d617e4c8b5e8a219530b8635f290c9260093d",
+    "chunks/popup-C97T_wym.js": "68c61bf97ee5576976bb8a1f83e42ed1ae5947adf94112fb585c9ce1c27ca8b7",
+    "chunks/welcome-CFv1fw3i.js": "8223a48fc19b51b9fa882d255aba520526aeb67596eac0f61f55802131cfc301",
+    "content-scripts/selection.js": "3c2e34351c35b30f736dca64e7188d6d1102df47865942b32285cf7fdfba3b82",
+    "content-scripts/x.js": "d66ed7add3e67bf7f5240928287ff2e7f82fd20162775f826844807239f83e64",
     "icon.svg": "d3ca3a658e90e9f964904d5f3b6e25e585c2bd6b3c0f4a14fe94662d4c28456e",
     "icons/128.png": "7cf8a307d50671035aebfcb61f3e58df9963da5f2c1306f82df75fcb54552171",
     "icons/16.png": "9f93f68f26ae6a2c9ed4fe2531e7cc8a892044c627c629017469f10adcb739af",
     "icons/32.png": "27bb28c7135f2efd0bd02fb4bed89774c58569d7017bc7a39e3b963dc0d23a75",
     "icons/48.png": "18b353afca24d8d4214fa1b09871090168fb1f66e91ada75968a012a43644f65",
-    "manifest.json": "56b523f5b25772265d78f41b3a1edf9377ec285755b5b3275010aa56702c00bc",
-    "options.html": "428d3eabb9887314008c610a8e25d077336db2eb25750d23ba512ab6742c7b02",
-    "popup.html": "a9db3edf59422619a3ac0817f828e9e7012f41e2fc8d05b25c61cf13750f867f",
-    "welcome.html": "4938444e1c8483d2912032c262aea87ef9d135997d5682266880f0dfe2269419"
+    "manifest.json": "b0a095bff6e2c23593bd71f261b40b3bf9ce1efbb3f8f3609f6e6bbf7328c149",
+    "options.html": "6cd8fcd35fbbfb339a50f411aaa401bb333cc4a27aa87a55d6617ed3d6b4d0c7",
+    "popup.html": "17e98dd67edfd81f0a12b4265647ff800158e4d9d127f057f88f115ccb51ec65",
+    "welcome.html": "b42c9bfdaea98ac394ac22affd56dc6bc569ba28ae54e0864311ee8b66b8b412"
   },
-  "archive": ".output/meaning-check-0.3.0-chrome.zip",
+  "archive": ".output/meaning-check-0.3.1-chrome.zip",
   "protocolsMocked": [
     "chat",
     "responses",
@@ -176,41 +200,74 @@
   ],
   "dia": {
     "installed": true,
-    "lastObservedVersion": "0.3.0",
-    "versionEvidence": "Native Dia Details UI after Reload; same extension ID",
-    "filesUpdatedTo": "0.3.0",
-    "installedPath": "/Users/rexyoung/Library/Application Support/Dia/User Data/Default/UnpackedExtensions/meaning-check-0.2.0-chrome_l3ZRKM",
-    "backup": ".output/dia-backups/20261014-132843",
-    "extensionId": "naoeinkdbpocgoiplnhkacpgcggjpdce",
+    "lastObservedVersion": "0.3.1",
+    "versionEvidence": "Native Dia Details UI after Reload; extension path and ID retained",
+    "filesUpdatedTo": "0.3.1",
+    "matchedBuildFiles": 21,
+    "backup": ".output/dia-backups/20261014-144005",
     "permissionsChanged": false,
     "profileStorageTouched": false,
     "upgradeReloadVerified": true,
     "fullRuntimeVerified": false,
-    "limitation": "Live X nice-try sample displayed inline loading with context timeout fallback; multi-card scrolling verified with mock pages, live model result not verified",
-    "settingsEntryVerified": true,
-    "savedModelShown": "DeepSeek V4.1 Flash",
+    "settingsEntryVerifiedInVersion": "0.3.0",
     "realXEntryVerified": true,
-    "realXInlineLoadingVerified": true,
+    "realXInlineResultVerified": true,
+    "nativeRetryLoadingTextVerified": true,
+    "motionVerifiedWithMockBrowser": true,
+    "nativeScrollAutomation": "Wheel target unavailable; keyboard Home returned to source/card; complete live scroll acceptance pending",
     "liveXSample": {
-      "url": "https://x.com/AleksejAros/status/2109655047164604810",
-      "currentText": "Hahaha))) nice try",
+      "url": "https://x.com/HavocCrave_/status/2109955050990624790",
+      "scope": "Confirmed standalone text; images not read",
       "observed": [
-        "Persistent check and settings buttons under source text",
-        "Inline interpretation region within current reply",
-        "Context phase, elapsed seconds, 30/60-second bounds and per-task cancel",
-        "Context collection failed after 30 seconds; explicit partial/retry/manual choices",
-        "Temporary collector tab no longer present after fallback"
+        "English original displayed before analysis",
+        "No missing-parent or truncated-text fallback",
+        "Inline Chinese main reading, tone, communicative function and source quotes",
+        "Standalone scope disclosure",
+        "Initial and manual second submission start with phase/time/cancel text"
       ],
-      "inferenceRequests": 0,
+      "inferenceRequests": 2,
       "multiCardConfirmed": false,
       "visualScreenshotSaved": false
-    }
+    },
+    "limitation": "One standalone sample; real reply parent chains, Reddit layouts and multi-card model quality require further acceptance"
   },
   "liveModel": {
-    "calls": 0,
+    "calls": 2,
     "countScope": "Agent recorded real inference calls; user calls are not audited",
-    "verified": false,
-    "requires": "Real provider/page acceptance using locally configured API"
+    "verified": "Single standalone post and explicit second-submission path only",
+    "provider": "DeepSeek",
+    "modelShown": "DeepSeek V4.1 Flash",
+    "operations": [
+      {
+        "action": "initial-check",
+        "elapsedSecondsShown": 7.7,
+        "totalTokensShown": 1641,
+        "status": "valid-result"
+      },
+      {
+        "action": "manual-submit-same-text",
+        "elapsedSecondsShown": 7.0,
+        "totalTokensShown": 1420,
+        "status": "valid-result"
+      }
+    ],
+    "firstBatchLimit": 20,
+    "automaticRetries": 0,
+    "remaining": "10-example interpretation acceptance, other providers, true reply chains"
   },
-  "evidence": "Mock fixture results are not live provider or model quality evidence"
+  "evidence": "Mock fixture results are not live provider or model quality evidence",
+  "archiveSha256": "894ee60f0eb67cc4fc65c9246e5925b0986ea89f7c438cbf1a21fd478d636a28",
+  "publication": {
+    "repository": "https://github.com/RexYoung000/Meaning_Check",
+    "status": "pending",
+    "profileFeatured": "pending",
+    "storeRelease": false,
+    "githubRelease": false
+  },
+  "credentialPreflight": {
+    "historicalTextBlobsScanned": 174,
+    "currentTrackedAndNonignoredFilesScanned": true,
+    "credentialPatternMatches": 0,
+    "limitation": "Pattern scan, not an exhaustive guarantee"
+  }
 }

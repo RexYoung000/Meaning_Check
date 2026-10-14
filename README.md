@@ -1,37 +1,86 @@
 # Meaning Check
 
-开源的公开交流理解浏览器插件。使用自己的模型 API，点击「帮我确认意思」，先读主解读，再看语气和原文依据。MIT 许可。[English](README.en.md)。
+读懂公开帖子和回复的意思、语气与判断依据。使用自己的模型 API，在原文下点击「帮我确认意思」，解读就在对应内容下方展开。
 
-## 当前版本
+**开源 · MIT · 自带 API（BYOK） · 中英界面**
 
-0.3.0 在回复原文下展开独立卡片，支持多条同时解读、排队、加载计时、收起与单条取消，并提供回复旁的插件设置入口。已实现图标与常驻按钮、工具栏、首次引导、中英界面、独立输出语言、九家模型厂商与自定义接口、网站 / 路径管理，以及 X / Reddit 回复和自定义网页选区入口。已有 DeepSeek 配置有迁移保护；保存与连接测试分别显示。
+[English](README.en.md) · [使用规则](documentation/product.md) · [模型与接口](documentation/models.md) · [验证记录](documentation/tests.md)
 
-类型、逻辑检查、隔离浏览器中实际插件、构建和权限检查的结果见 [测试记录](documentation/tests.md)。网站和模型的自动化场景使用模拟数据。Dia 已重载并确认 0.3.0，设置入口与真实 X 的原位加载 / 缺上下文回退已核对；真实多条使用体验和厂商结果仍待验收。本轮没有真实模型调用，代理记录的真实推理为 0。
+## 可以做什么
 
-## 在 Dia 使用新版
+- 独立帖子直接解读当前文字；回复结合当前内容、直接父帖和原帖，来源相同则去重。
+- 先给主解读，再看语气、表达功能和可回看的原文依据；不把反驳直接判成恶意，不虚构确定性百分比。
+- 卡片在原文下方展开，可连续点击多条。最多两条并行，其余排队；滚动不关闭，收起继续，关闭只取消这一条。
+- 加载、再次确认、手动分析和重试都有阶段、动效、秒数与等待上限。
+- 自带模型 API：DeepSeek、Grok / xAI、GPT / OpenAI、Claude / Anthropic、Gemini、GLM、千问、Kimi、MiniMax，以及自定义兼容接口。
+- 默认支持 X 和 Reddit；可管理网站与路径，其他已授权网站通过选中文字使用。界面和解读输出语言可分别设置。
 
-1. 打开 Dia 的扩展管理页（地址栏输入 `chrome://extensions`），找到 Meaning Check，点击 Reload / 重新加载。确认版本 0.3.0；若此前未加载，开启开发者模式，加载本项目的 `.output/chrome-mv3`。
-2. 从浏览器的扩展菜单找到 Meaning Check，支持时固定到工具栏。点击网页回复旁的「插件设置」，或工具栏图标 → 插件设置；浏览器 Details 是管理页面，其中 Extension options 也能打开真正的插件设置。首次安装 / 首次升级会打开一次使用指南，之后可从弹窗或设置再次打开。
-3. 在「模型连接」新增自己的连接：厂商 → 完整模型名称 → API 密钥 → 保存。原有 DeepSeek 配置自动迁入。需要验证时点击「编辑 → 测试连接」，会进行一次可能收费的 API 调用。保存、悬停、切换型号及免费示例不进行推理。
-4. 「语言」分别设置界面和解读语言。界面可随时切换 中文 / English；解读默认跟随浏览器完整语言，或选择简体中文、English、日语等 / 自填语言代码。改界面不会自动改解读语言。引用保留原文。
-5. 刷新 X / Reddit 页面，点击公开回复下常驻的「帮我确认意思」。缺上下文时先选择补齐、现有内容分析或手动补充；可连续点击多条，每条在原文下方加载；最多同时处理两条，其余排队。滚动不会关闭；收起保留任务，关闭只取消这一条，暂停取消当前网站所有任务。
+![原文下方的解读卡片](documentation/evidence/result-light.png)
 
-在「网站」可关闭、编辑、删除或新增 HTTPS 来源及路径（每行一条，* 通配，满足任意一条即可）。Reddit 默认含 www.reddit.com 和 reddit.com 两个来源项。新来源由浏览器按需授权；自定义网页先选中文字，点击入口确认可选背景，再分析，不读取整页、编辑框或私信。自定义 API 支持 HTTPS 或 localhost / 127.0.0.1 的 HTTP 地址。
+截图来自实际插件的模拟网页 / 模型自测，用于展示交互，不代表真实模型质量。
 
-图文、GIF 只覆盖文字；模型错误、无效依据或截断结果不展示为结论。没有业务服务器、分析历史、回复生成或自动发送。密钥仅保存在本浏览器扩展的可信存储，网页不能读取；更换接口地址需重新填写密钥。
+## 安装与开始使用
 
-## 开发与交付
+当前为 **0.3.1 POC**，从源码构建安装；尚未发布扩展商店或正式 Release 安装包。
 
-Node 24、pnpm 10。`pnpm install` 安装，`pnpm dev` 开发，`pnpm build` 生成 `.output/chrome-mv3`，`pnpm zip` 生成 `.output/meaning-check-0.3.0-chrome.zip`。构建后重新加载扩展并刷新网页。图标维护源为 public/icon.svg，`pnpm icons` 生成四种 PNG；构建与打包自动复制根 LICENSE。
+需要 Node.js 24 和 pnpm 10：
 
-检查：`pnpm typecheck`、`pnpm test`、`pnpm build`、`pnpm test:e2e`、`pnpm check:package`。首次测试运行 `pnpm exec playwright install chromium`；也可用 `MEANING_CHECK_CHROMIUM` 指定官方测试浏览器。测试只建立独立临时配置，不使用个人浏览器资料。
+```sh
+git clone https://github.com/RexYoung000/Meaning_Check.git
+cd Meaning_Check
+pnpm install
+pnpm build
+```
 
-## 文档
+1. 在 Dia / Chrome 地址栏打开 `chrome://extensions`，开启开发者模式，选择 **Load unpacked / 加载已解压的扩展程序**，选中项目的 `.output/chrome-mv3` 文件夹。
+2. 点击工具栏插件图标 → **插件设置**，或网页内容旁的 **插件设置**。浏览器的 Details 是管理页，其中 **Extension options** 也能打开同一设置页。
+3. 在 **模型连接**选择厂商、型号，输入自己的 API 密钥并保存。保存不会调用模型；点击测试连接会请求一次模型，可能产生 API 费用。
+4. 在 **语言**设置界面与解读语言，在 **网站**管理生效范围。
+5. 刷新 X / Reddit，点击「帮我确认意思」。自定义网站先选中文字，再确认可选背景并分析。
 
-- [产品规则](documentation/product.md)、[界面与交互](DESIGN.md)
-- [模型、API ID 和官方来源](documentation/models.md)
-- [架构、权限、密钥与迁移](documentation/architecture.md)
-- [验证结果与待验收项](documentation/tests.md)
-- [真实回复验收候选](documentation/evidence/live-evaluation.json)、[研究记录](documentation/research.md)
+已有安装：构建更新后，在扩展管理页点 Reload，确认 0.3.1，再刷新网页。若浏览器加载的是另行解压的副本，需更新那个副本后再重载；单独修改源码文件夹不会自动更新它。保留原扩展路径 / ID，避免卸载后丢失本地配置。
 
-当前只保留本地源码与提交，没有远端或商店发布。最终视觉、使用体验及真实理解价值由 Rex 验收。
+## 「缺上下文」如何判断
+
+这是页面关系与读取状态的判断，不是模型在猜有没有上下文：
+
+- **已确认独立帖子**：父帖不适用，直接分析当前正文。
+- **时间线未发现回复关联**：只解读本条，说明没有确认父帖不存在；可以补充背景。
+- **已确认是回复，但父帖 / 原帖未取得**：先补齐，失败后由你选择现有文字、重试或手动补充。
+- **关系尚未确认**：单独说明无法确认回复关系，不冒充已确认缺父帖。
+- **正文未展开**：提示展开 / 补充文字。媒体、引用、隐藏控件和翻译按钮不算正文展开控件；再次分析会更新已选来源的文字和截断状态。
+
+补齐最多 30 秒；一次执行总计最多 60 秒，排队不计入执行超时。上限不是预计完成时间。无效或未展开的输入会直接说明模型请求尚未开始，不用虚假等待掩盖错误。
+
+## 模型、数据与边界
+
+厂商名称、完整型号、API ID 与官方来源见 [模型目录](documentation/models.md)。保留 DeepSeek V4.1 Flash（`deepseek-flash`）和 Grok 4.6；目录是接口预置，实际可用型号取决于账号权限。Claude Code 是工具，不能用其登录凭据替代 Claude API 密钥。
+
+密钥只保存在本浏览器扩展的可信本地存储，网页无法读取；只有你点击时，选中的相关文字才发送给当前配置的模型厂商。更换接口地址需要重新填写密钥。没有业务服务器、账号系统、分析历史、回复生成或自动发送；不会自动重发付费请求。
+
+仅分析文字，图片 / GIF 不读取。模型引文必须匹配输入；无效依据和截断输出不展示为有效结论。此插件解释表达，不验证帖子中的新闻或事实。网站结构、登录状态和加载方式变化仍可能影响父链读取。
+
+## 开发与验证
+
+```sh
+pnpm typecheck
+pnpm test
+pnpm build
+pnpm exec playwright install chromium
+pnpm test:e2e
+pnpm check:package
+```
+
+`pnpm dev` 用于开发，`pnpm zip` 生成 `.output/meaning-check-0.3.1-chrome.zip`。图标维护源为 `public/icon.svg`，`pnpm icons` 输出 PNG；构建自动包含根 LICENSE。
+
+测试使用独立临时浏览器配置和模拟接口，不使用个人浏览器资料。自动化通过不等于真实厂商质量通过；实际运行结果与尚待验收的项目见 [测试记录](documentation/tests.md)。
+
+产品、交互、架构变更先更新对应文档，再实现。中文 README 与英文 README 同步维护；完成验证后同步公开仓库。普通代码同步不等于扩展商店发布。
+
+## 文档与反馈
+
+- [产品规则](documentation/product.md) · [交互设计](DESIGN.md)
+- [架构与权限](documentation/architecture.md) · [模型目录](documentation/models.md)
+- [验证和验收](documentation/tests.md) · [研究与反馈](documentation/research.md)
+
+欢迎通过 [Issues](https://github.com/RexYoung000/Meaning_Check/issues) 提供公开页面案例、操作步骤与预期行为。请不要提交 API 密钥或私信内容。

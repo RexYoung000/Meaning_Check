@@ -5,7 +5,7 @@ import {safeError,UserError} from '../shared/errors';
 import {activeConnection,connection,deleteProfile,initializeSettings,markTested,publicConfig,saveProfile,setActive,updatePreferences} from '../shared/settings';
 import {siteFor} from '../shared/sites';
 import {Collector,cleanupOrphans} from '../x/collector';
-import {applyManual,bundleOf,resolveContext,selectionBundle,validateBundle,validatePost,validateSnapshot} from '../analysis/context';
+import {applyManual,assertInputSize,bundleOf,resolveContext,selectionBundle,validateBundle,validatePost,validateSnapshot} from '../analysis/context';
 import {analyze,listModels} from '../analysis/provider';
 import {errorText} from '../shared/i18n';
 import {AnalysisQueue} from '../analysis/queue';
@@ -88,45 +88,51 @@ export default defineBackground(()=>{
     const stop=()=>{controller?.abort();void collector.close().catch(()=>{});};
     jobs.set(port,{cancel:()=>{disconnected=true;stop();port.disconnect();}});
     port.onDisconnect.addListener(()=>{disconnected=true;stop();jobs.delete(port);});
-    const runAnalysis=async(manual?:Parameters<typeof applyManual>[1])=>{
-      if(!bundle||!controller)return;bundle=applyManual(bundle,manual);const config=await publicConfig();if(!siteFor(port.sender?.url,config.preferences))throw new UserError('disabled','当前网站已关闭。');const p=await activeConnection();
+    const runAnalysis=async(manual?:Parameters<typeof applyManual>[1]):Promise<JobEvent|undefined>=>{
+      if(!bundle||!controller)return;bundle=applyManual(bundle,manual);const config=await publicConfig();if(!siteFor(port.sender?.url,config.preferences))throw new UserError('disabled','当前网站已关闭。');const p=await activeConnection();assertInputSize(bundle);
       emit({type:'phase',phase:'analysis',startedAt});const response=await analyze(bundle,p,controller.signal,fetch,config.outputLanguage);
-      if(!controller.signal.aborted)emit({type:'result',bundle,response});
+      if(!controller.signal.aborted)return {type:'result',bundle,response};
     };
-    const runContext=async()=>{
-      if(!current||!controller)return;await activeConnection();emit({type:'phase',phase:'context',startedAt});
+    const runContext=async():Promise<JobEvent|undefined>=>{
+      if(!current||!controller)return;await activeConnection();if(!initial||!['none','unlinked'].includes(initial.parentState))emit({type:'phase',phase:'context',startedAt});
       const resolved=await resolveContext(current,initial,(url,signal)=>collector.read(url,signal),controller.signal);await collector.close();bundle=resolved.bundle;
       if(controller.signal.aborted)return;
-      if(resolved.original)throw new UserError('original-post','这条是原帖。请对它下面的回复使用「帮我确认意思」。');
-      if(bundle.missing.length||bundle.posts.some(p=>p.truncated))emit({type:'context',bundle,reason:resolved.reason});else await runAnalysis();
+      if(bundle.missing.length||bundle.posts.some(p=>p.truncated))return {type:'context',bundle,reason:resolved.reason};return runAnalysis();
     };
     port.onMessage.addListener((raw:ClientCommand)=>{
       if(raw?.type==='heartbeat')return;if(raw?.type==='cancel'){stop();return;}if(busy||disconnected)return;
       busy=true;controller=new AbortController();const operation=controller;let timedOut=false;
       let timer:ReturnType<typeof setTimeout>|undefined,release:(()=>void)|undefined;
       const queuedAt=Date.now();
-      const task=async()=>{
+      const task=async():Promise<JobEvent|undefined>=>{
         await ready;if(disconnected||operation.signal.aborted)return;
         const config=await publicConfig();const site=siteFor(port.sender?.url,config.preferences);if(!site)throw new UserError('disabled','当前网站已关闭。');
         if(raw?.type==='start'&&raw.selection){
-          if(site.adapter!=='selection')throw new UserError('bad-input','选区来源不对应。');bundle=selectionBundle(raw.post,port.sender!.url!);await activeConnection();emit({type:'context',bundle});return;
+          if(site.adapter!=='selection')throw new UserError('bad-input','选区来源不对应。');bundle=selectionBundle(raw.post,port.sender!.url!);await activeConnection();return {type:'context',bundle};
         }
         if(!['start','retry-context','analyze'].includes(raw?.type))throw new UserError('bad-input','无效操作。');
         release=await queue.acquire(operation.signal,position=>emit({type:'queued',position,queuedAt}));
         if(disconnected||operation.signal.aborted)return;
-        startedAt=Date.now();
-        timer=setTimeout(()=>{timedOut=true;operation.abort();void collector.close();emit({type:'error',code:'analysis-timeout',message:'分析超过等待时间。',...(bundle?{bundle}:{})});},ANALYSIS_TIMEOUT_MS);
+        startedAt=Date.now();emit({type:'phase',phase:'preparing',startedAt});
+        timer=setTimeout(()=>{timedOut=true;operation.abort();void collector.close().catch(()=>{});},ANALYSIS_TIMEOUT_MS);
         if(raw?.type==='start'){
           current=validatePost(raw.post);if(new URL(current.url).origin!==new URL(site.origin).origin)throw new UserError('bad-input','帖子来源不对应。');
           initial=validateSnapshot(raw.snapshot,current.id);if(initial?.parent&&new URL(initial.parent.url).origin!==new URL(current.url).origin)initial=undefined;
-          if(current.truncated||initial?.parentState==='unknown')initial=undefined;await runContext();
-        }else if(raw?.type==='retry-context'){initial=undefined;await runContext();}
+          if(current.truncated||initial?.parentState==='unknown')initial=undefined;return runContext();
+        }else if(raw?.type==='retry-context'){initial=undefined;return runContext();}
         else if(raw?.type==='analyze'){
           if(raw.bundle){bundle=validateBundle(raw.bundle);for(const post of bundle.posts)if(post.origin!=='manual'&&new URL(post.url).origin!==new URL(site.origin).origin)throw new UserError('bad-input','材料来源不对应。');}
-          await runAnalysis(raw.manual);
+          return runAnalysis(raw.manual);
         }
       };
-      void task().catch(async error=>{if(!operation.signal.aborted&&!timedOut){const lang=(await publicConfig()).uiLanguage;const safe=safeError(error);emit({type:'error',code:safe.code,message:errorText(lang,safe.code,safe.message),...(bundle?{bundle}:{})});}}).finally(async()=>{clearTimeout(timer);await collector.close().catch(()=>{});release?.();busy=false;});
+      void (async()=>{
+        let terminal:JobEvent|undefined;
+        try{terminal=await task();}
+        catch(error){if(!operation.signal.aborted){const lang=(await publicConfig()).uiLanguage;const safe=safeError(error);terminal={type:'error',code:safe.code,message:errorText(lang,safe.code,safe.message),...(bundle?{bundle}:{})};}}
+        finally{clearTimeout(timer);await collector.close().catch(()=>{});release?.();busy=false;}
+        if(timedOut)terminal={type:'error',code:'analysis-timeout',message:'分析超过等待时间。',...(bundle?{bundle}:{})};
+        if(terminal&&(!operation.signal.aborted||timedOut))emit(terminal);
+      })();
     });
   });
 });

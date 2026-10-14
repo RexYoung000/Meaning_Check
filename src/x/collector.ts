@@ -63,7 +63,7 @@ export class Collector {
         try {
           const value = await browser.tabs.sendMessage(this.tab.id, { type: 'collect-snapshot', token: this.token, url: ref.url });
           const snapshot = validateSnapshot(value, ref.id);
-          if (snapshot && !snapshot.current.truncated) {
+          if (snapshot) {
             const signature = JSON.stringify(snapshot);
             if (signature !== stable) { stable = signature; since = Date.now(); }
             else if (Date.now() - since >= 750) return snapshot;

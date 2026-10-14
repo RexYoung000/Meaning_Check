@@ -14,6 +14,9 @@ export function bundleOf(current: Post, parent?: Post, root?: Post): ContextBund
     warnings: posts.flatMap(p => p.truncated ? ['有帖子文字未完全展开，不能将截断文字当成完整上下文。'] : []),
   };
 }
+export function postBundle(current:Post,relation:ContextBundle['relation']='standalone'):ContextBundle {
+  return {...bundleOf(current),mode:'post',relation,missing:[]};
+}
 export function validatePost(value: unknown): Post {
   const p = value as Partial<Post> | null;
   const ref = typeof p?.url === 'string' ? threadRef(p.url) : undefined;
@@ -26,10 +29,10 @@ export function validateSnapshot(value: unknown, requested: string): PageSnapsho
   try {
     const s = value as PageSnapshot;
     const current = validatePost(s.current);
-    if (current.id !== requested || !['known', 'none', 'unknown'].includes(s.parentState)) return;
+    if (current.id !== requested || !['known', 'none', 'unknown', 'unlinked'].includes(s.parentState)) return;
     const parent = s.parent ? validatePost(s.parent) : undefined;
     if (s.parentState === 'known' && (!parent || parent.id === current.id)) return;
-    return { current, parent: s.parentState === 'known' ? parent : undefined, parentState: s.parentState };
+    return { current, parent: s.parentState === 'known' ? parent : undefined, parentState: s.parentState, ...(typeof s.replyKnown==='boolean'?{replyKnown:s.replyKnown}:{}) };
   } catch { return; }
 }
 export function applyManual(bundle: ContextBundle, values?: Partial<Record<ContextRole, string>>): ContextBundle {
@@ -45,7 +48,8 @@ export function applyManual(bundle: ContextBundle, values?: Partial<Record<Conte
   }
   const used = new Set(Object.values(next.roles));
   next.posts = next.posts.filter(p => used.has(p.id));
-  next.missing = next.mode === 'selection' ? [] : ['parent', 'root'].filter(role => !next.roles[role as 'parent' | 'root']) as ContextBundle['missing'];
+  next.missing = next.mode === 'selection' || next.mode === 'post' ? [] : ['parent', 'root'].filter(role => !next.roles[role as 'parent' | 'root']) as ContextBundle['missing'];
+  if(!next.missing.length)delete next.contextIssue;
   return next;
 }
 export function assertInputSize(bundle: ContextBundle): void {
@@ -62,6 +66,7 @@ export async function resolveContext(current: Post, initial: PageSnapshot | unde
   let cursor = current;
   let snapshot = initial;
   let reason: string | undefined;
+  let relationshipUnknown=false;
   const visited = new Set<string>();
   const deadline = Date.now() + (options.timeout ?? CONTEXT_TIMEOUT_MS);
   const timed = new AbortController();
@@ -77,13 +82,14 @@ export async function resolveContext(current: Post, initial: PageSnapshot | unde
       if (snapshot.current.id !== cursor.id) throw new UserError('context-mismatch', '补齐页面与目标回复不一致。');
       if (depth === 0) selected = snapshot.current;
       if (depth === 1) parent = snapshot.current;
+      if (depth === 0 && snapshot.parentState === 'unlinked') return {bundle:postBundle(selected,'unconfirmed')};
       if (snapshot.parentState === 'none') {
-        if (depth === 0) return { bundle: bundleOf(selected), original: true };
+        if (depth === 0) return { bundle: postBundle(selected), original: true };
         root = snapshot.current;
         if (parent?.id === root.id) parent = root;
         break;
       }
-      if (snapshot.parentState !== 'known' || !snapshot.parent) { reason = '页面没有足够信息确认父链。'; break; }
+      if (snapshot.parentState !== 'known' || !snapshot.parent) { reason = '页面没有足够信息确认父链。';relationshipUnknown=depth===0&&!snapshot.replyKnown; break; }
       if (depth === 0) parent = snapshot.parent;
       if (depth === (options.max ?? MAX_ANCESTORS) || Date.now() >= deadline) { reason = '已达到补齐上限，未能确认原帖。'; break; }
       cursor = snapshot.parent;
@@ -93,12 +99,13 @@ export async function resolveContext(current: Post, initial: PageSnapshot | unde
     if (signal.aborted) throw error;
     reason = '补齐未完成，可能是页面未加载、内容不可见或网络超时。';
   } finally { clearTimeout(timer); linked.dispose(); }
-  return { bundle: bundleOf(selected, parent, root), reason };
+  const bundle=bundleOf(selected,parent,root);if(relationshipUnknown)bundle.contextIssue='unconfirmed-relation';
+  return { bundle, reason };
 }
 
 export function validateBundle(value: unknown): ContextBundle {
   const b = value as ContextBundle;
-  if (!b || !b.roles || !Array.isArray(b.posts) || b.posts.length < 1 || b.posts.length > 3 || Object.keys(b.roles).some(r => !['current','parent','root'].includes(r))) throw new UserError('bad-input','上下文材料不完整，请重新选择回复。');
+  if (!b || !b.roles || !Array.isArray(b.posts) || b.posts.length < 1 || b.posts.length > 3 || (b.mode!==undefined&&!['thread','selection','post'].includes(b.mode)) || Object.keys(b.roles).some(r => !['current','parent','root'].includes(r))) throw new UserError('bad-input','上下文材料不完整，请重新选择回复。');
   const posts = b.posts.map(p => {
     if (p?.origin === 'manual') {
       if (!/^manual-(current|parent|root)$/.test(p.id) || p.url !== '' || typeof p.text !== 'string' || !p.text.trim() || p.text.length > 60_000) throw new UserError('bad-input','补充材料不完整，请重新填写。');
@@ -114,6 +121,11 @@ export function validateBundle(value: unknown): ContextBundle {
   if (new Set(posts.map(p => p.id)).size !== posts.length || !posts.find(p=>p.id===b.roles.current) || Object.values(b.roles).some(id => typeof id !== 'string' || !posts.find(p=>p.id===id))) throw new UserError('bad-input','上下文来源不一致，请重新选择回复。');
   const result = bundleOf(posts.find(p=>p.id===b.roles.current)!, posts.find(p=>p.id===b.roles.parent), posts.find(p=>p.id===b.roles.root));
   if (b.mode === 'selection') { result.mode = 'selection'; result.missing = []; }
+  if (b.mode === 'post') {
+    if(b.roles.parent || (b.roles.root && posts.find(p=>p.id===b.roles.root)?.origin!=='manual') || !['standalone','unconfirmed'].includes(b.relation??''))throw new UserError('bad-input','独立帖材料与背景来源不一致。');
+    result.mode='post';result.relation=b.relation;result.missing=[];
+  }
+  if(b.contextIssue==='unconfirmed-relation'&&result.missing.length)result.contextIssue=b.contextIssue;
   return result;
 }
 

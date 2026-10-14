@@ -3,7 +3,7 @@ import { postRef } from './urls';
 
 export const ARTICLE_SELECTOR = 'article';
 function owned<T extends Element>(article: Element, selector: string): T[] {
-  return [...article.querySelectorAll<T>(selector)].filter(el => el.closest('article') === article && !el.closest('[data-testid="quoteTweet"], [data-quoted-post]'));
+  return [...article.querySelectorAll<T>(selector)].filter(el => el.closest('article') === article && !el.closest('[data-mc-owned],[data-testid="quoteTweet"], [data-quoted-post]'));
 }
 export function textElement(article: Element): HTMLElement | undefined {
   return owned<HTMLElement>(article, '[data-testid="tweetText"]')[0] ?? owned<HTMLElement>(article, '.whitespace-pre-wrap')[0];
@@ -15,7 +15,16 @@ function textOf(el: Element): string {
   return (clone.textContent ?? '').trim();
 }
 export function showMoreElement(article: Element): HTMLElement | undefined {
-  return owned<HTMLElement>(article, '[data-testid="tweet-text-show-more-link"]')[0] ?? owned<HTMLElement>(article, 'button, a').find(el => /^(show more|显示更多|展开|查看更多)$/i.test((el.textContent ?? '').trim()));
+  const text=textElement(article);
+  const visible=(el:HTMLElement)=>{
+    if(el.closest('[hidden],[aria-hidden="true"],[data-mc-owned],[data-testid="tweetPhoto"],[data-testid="videoPlayer"],.immersive-translate-target-inner,[class*="immersive-translate"]'))return false;
+    for(let node:Element|null=el;node&&article.contains(node);node=node.parentElement){const style=getComputedStyle(node);if(style.display==='none'||style.visibility==='hidden'||style.visibility==='collapse')return false;}
+    return true;
+  };
+  const explicit=owned<HTMLElement>(article,'[data-testid="tweet-text-show-more-link"]').find(visible);
+  if(explicit)return explicit;
+  // Generic expand controls are relevant only inside the actual source text.
+  return owned<HTMLElement>(article,'button,a,[role="button"]').find(el=>!!text?.contains(el)&&visible(el)&&/^(show more|显示更多|展开|查看更多)$/i.test((el.textContent??'').trim()));
 }
 export function readPost(article: Element): Post | undefined {
   if (article.parentElement?.closest('article')) return;
@@ -45,32 +54,40 @@ function hasReplyMarker(article: Element): boolean {
 }
 export function readPageSnapshot(doc: Document, requestedUrl: string): PageSnapshot | undefined {
   const ref = postRef(requestedUrl);
-  if (!ref || postRef(doc.location?.href ?? requestedUrl)?.id !== ref.id) return;
+  const viewing=postRef(doc.location?.href??requestedUrl);
+  if (!ref || (viewing&&viewing.id!==ref.id)) return;
   const articles = [...doc.querySelectorAll(ARTICLE_SELECTOR)].filter(el => !el.closest('[data-mc-owned]'));
   const index = articles.findIndex(a => readPost(a)?.id === ref.id);
   const article = articles[index];
   const current = article ? readPost(article) : undefined;
   if (!article || !current) return;
+  if(!viewing){
+    if(!hasReplyMarker(article)&&!hasTopConnector(article)&&!hasBottomConnector(article))return {current,parentState:'unlinked'};
+    return {current,parentState:'unknown',replyKnown:hasReplyMarker(article)||hasTopConnector(article)};
+  }
   const area = article.closest('[data-testid="primaryColumn"],main') ?? article.parentElement?.parentElement ?? doc.body;
   const loadingText = [...area.querySelectorAll('div,span,p')].some(el => !el.children.length && !el.closest('article') && /^(正在加载帖子|Loading posts?|Loading thread)[.…]*$/i.test((el.textContent ?? '').trim()));
-  if (loadingText || area.querySelector('[role="progressbar"],[aria-busy="true"]')) return;
+  const beforeTarget=(el:Element)=>!!(el.compareDocumentPosition(article)&Node.DOCUMENT_POSITION_FOLLOWING);
+  const loading=[...area.querySelectorAll('[role="progressbar"],[aria-busy="true"]')].some(el=>!el.closest('article,[data-mc-owned]')&&beforeTarget(el));
+  if (loadingText || loading) return;
   const previous = articles[index - 1];
   const parent = previous ? readPost(previous) : undefined;
   const modern = !!article.closest('[data-timeline-entry]');
   if (modern) {
     if (hasTopConnector(article)) {
       if (previous && parent && hasBottomConnector(previous) && previous.parentElement?.parentElement === article.parentElement?.parentElement) return { current, parent, parentState: 'known' };
-      return { current, parentState: 'unknown' };
+      return { current, parentState: 'unknown',replyKnown:true };
     }
     // The focal entry has a distinct non-link wrapper; feed entries cannot establish a root.
     const focal = article.closest('[data-timeline-entry]');
-    if (focal?.getAttribute('tabindex') === '-1' && !hasReplyMarker(article) && !doc.querySelector('[role="progressbar"]')) return { current, parentState: 'none' };
-    return { current, parentState: 'unknown' };
+    if (focal && !previous && !hasReplyMarker(article)) return { current, parentState: 'none' };
+    return { current, parentState: 'unknown',replyKnown:hasReplyMarker(article) };
   }
   // Classic X: only the focal detail article in the primary column has tabindex=-1.
   const primary = article.closest('[data-testid="primaryColumn"]');
-  const focal = article.getAttribute('tabindex') === '-1';
-  if (primary && focal) {
+  // The canonical detail URL plus own post identity establishes the focal item;
+  // recent X renders do not consistently give it tabindex=-1.
+  if (primary) {
     const entries = [...primary.querySelectorAll('article[data-testid="tweet"]')];
     const at = entries.indexOf(article);
     const prev = entries[at - 1];
@@ -80,7 +97,7 @@ export function readPageSnapshot(doc: Document, requestedUrl: string): PageSnaps
     const pos = cell ? before.indexOf(cell) : -1;
     const gap = pos > 0 ? before[pos - 1] : undefined;
     if (candidate && prev && gap?.contains(prev) && !/promoted|推广|广告/i.test(prev.textContent ?? '')) return { current, parent: candidate, parentState: 'known' };
-    if (at === 0 && !hasReplyMarker(article) && !primary.querySelector('[role="progressbar"]') && !/show this thread|显示此帖串|帖子不可用/i.test(primary.textContent ?? '')) return { current, parentState: 'none' };
+    if (at === 0 && !hasReplyMarker(article) && !/show this thread|显示此帖串|帖子不可用|post unavailable|deleted post/i.test(primary.textContent ?? '')) return { current, parentState: 'none' };
   }
-  return { current, parentState: 'unknown' };
+  return { current, parentState: 'unknown',replyKnown:hasReplyMarker(article) };
 }

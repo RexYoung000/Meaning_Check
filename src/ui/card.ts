@@ -53,7 +53,7 @@ export class ResultCard {
   }
   remove(): void { this.stopClock();this.host.remove(); }
   private copy(key:CopyKey,...args:(string|number)[]):string{return t(this.language,key,...args);}
-  private role(role:ContextRole,bundle:ContextBundle):string{return roleLabel(this.language,role,bundle.mode==='selection');}
+  private role(role:ContextRole,bundle:ContextBundle):string{return bundle.mode==='post'?this.copy(role==='current'?'currentPost':role==='root'?'background':'parent'):roleLabel(this.language,role,bundle.mode==='selection');}
   private stopClock():void{clearInterval(this.clock);this.clock=undefined;}
   private reset(): void { this.stopClock();this.content.replaceChildren(); }
   private setCaption(text:string):void{this.caption=text;this.compact.textContent=this.collapsed?text:'';}
@@ -72,11 +72,12 @@ export class ResultCard {
     this.content.append(button(this.copy('cancelTask'),()=>this.actions.close(),'button secondary'));
     this.position();
   }
-  phase(phase: 'context' | 'analysis',startedAt=Date.now()): void {
-    this.loading(this.copy(phase==='context'?'contextPhase':'analysisPhase'),this.copy(phase==='context'?'contextHelp':'analysisHelp'),phase==='context'?'contextWait':'analysisWait',startedAt);
+  phase(phase: 'preparing' | 'context' | 'analysis',startedAt=Date.now()): void {
+    this.loading(this.copy(phase==='preparing'?'preparingPhase':phase==='context'?'contextPhase':'analysisPhase'),this.copy(phase==='preparing'?'preparingHelp':phase==='context'?'contextHelp':'analysisHelp'),phase==='context'?'contextWait':'analysisWait',startedAt);
   }
   queued(position:number,queuedAt:number):void{this.loading(this.copy('queued',position),this.copy('queueHelp'),'queueWait',queuedAt);}
   private coverage(bundle: ContextBundle,beforeAnalysis=false): void {
+    if(bundle.mode==='post')this.content.append(node('p',this.copy(bundle.relation==='standalone'?'postScope':'unlinkedScope'),'notice'));
     if (bundle.missing.length) this.content.append(node('p', this.copy(beforeAnalysis?'missingBefore':'missing',bundle.missing.map(r => this.role(r, bundle)).join(this.language==='zh'?'、':' / ')), 'notice'));
     if (bundle.posts.some(p => p.hasMedia)) this.content.append(node('p', this.copy('media'), 'notice'));
     for (const warning of new Set(bundle.warnings)) this.content.append(node('p', this.copy('truncated'), 'notice'));
@@ -96,11 +97,13 @@ export class ResultCard {
   context(bundle: ContextBundle, reason?: string): void {
     this.bundle = bundle;
     this.reset();
-    this.content.append(node('p', bundle.mode==='selection' ? this.copy('selection') : this.copy('needContext'), 'summary-text'), node('p', bundle.mode==='selection' ? this.copy('background') : this.language === 'zh' ? (reason ?? this.copy('contextReason')) : this.copy('contextReason'), 'muted'));
-    this.setCaption(this.copy(bundle.mode==='selection'?'selection':'needContext'));
+    const incomplete=bundle.posts.some(p=>p.truncated);
+    const title=this.copy(incomplete?'needText':bundle.mode==='selection'?'selection':bundle.contextIssue==='unconfirmed-relation'?'relationUnknown':'needContext');
+    const help=incomplete?this.copy('expandHelp'):bundle.mode==='selection'?this.copy('background'):bundle.contextIssue==='unconfirmed-relation'?this.copy('relationHelp'):this.language==='zh'?(reason??this.copy('contextReason')):this.copy('contextReason');
+    this.content.append(node('p',title,'summary-text'),node('p',help,'muted'));this.setCaption(title);
     this.coverage(bundle,true);
     const row = node('div', undefined, 'actions');
-    row.append(button(this.copy('partial'), () => this.actions.analyze(), 'button primary'));
+    if(!incomplete)row.append(button(this.copy('partial'), () => this.actions.analyze(), 'button primary'));
     if(bundle.mode!=='selection')row.append(button(this.copy('retryContext'), () => this.actions.retryContext(), 'button secondary'));
     this.content.append(row);
     this.manual(bundle);
@@ -132,7 +135,7 @@ export class ResultCard {
     this.sources(bundle);
     const meta = node('p', this.copy('elapsed',(response.elapsedMs / 1000).toFixed(1)) + (response.usage ? ' · ' + this.copy('usage',response.usage.totalTokens) : '') + (response.model ? ' · ' + response.model : '') + (response.language ? ' · ' + response.language : ''), 'meta');
     this.content.append(meta);
-    if (bundle.mode==='selection' || bundle.missing.length || response.result.status === 'needs_context') this.manual(bundle);
+    if (bundle.mode==='selection' || bundle.mode==='post' || bundle.missing.length || response.result.status === 'needs_context') this.manual(bundle);
     this.position();
   }
   error(code: string, message: string, bundle?: ContextBundle): void {
@@ -140,6 +143,7 @@ export class ResultCard {
     this.reset();
     this.setCaption(errorText(this.language,code,message));
     this.content.append(node('p', this.copy('noResult'), 'summary-text'), node('p', errorText(this.language,code,message), 'error-message'));
+    if(['input-limit','truncated-input','bad-input','missing-key','disabled'].includes(code))this.content.append(node('p',this.copy('notSubmitted'),'muted'));
     if (code === 'missing-key') this.content.append(button(this.copy('openSettings'), () => this.actions.settings(), 'button primary'));
     else if (this.bundle && code !== 'original-post') {
       if (code !== 'input-limit' && code !== 'truncated-input') this.content.append(button(this.copy('reanalyze'), () => this.actions.analyze(), 'button primary'));
@@ -154,7 +158,7 @@ export class ResultCard {
     const form = node('form');
     const values = new Map<ContextRole, HTMLTextAreaElement>();
     const original = new Map<ContextRole, string>();
-    for (const role of (bundle.mode === 'selection' ? ['current','root'] : ['current','parent','root']) as ContextRole[]) {
+    for (const role of (bundle.mode === 'selection' || bundle.mode==='post' ? ['current','root'] : ['current','parent','root']) as ContextRole[]) {
       const post = bundle.posts.find(p => p.id === bundle.roles[role]);
       original.set(role, post?.text ?? '');
       const label = node('label', this.role(role, bundle));

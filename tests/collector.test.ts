@@ -28,3 +28,11 @@ describe('临时页 ownership 与清理',()=>{
     vi.useFakeTimers();const collector=new Collector('token');const task=collector.read(post('1').url,new AbortController().signal);await vi.advanceTimersByTimeAsync(1001);await task;expect(Object.keys(fake.store.collectorTabs[0]).sort()).toEqual(['expires','id','pending','token']);await collector.close();vi.useRealTimers();
   });
 });
+
+describe('完整性与关系分开返回',()=>{
+ it('稳定的未展开正文返回明确限制，不等待到超时丢掉已有关系',async()=>{
+  vi.useFakeTimers();fake.tabs.sendMessage.mockResolvedValue({current:{...post('1'),truncated:true},parentState:'none'});
+  const collector=new Collector('token');const task=collector.read(post('1').url,new AbortController().signal);await vi.advanceTimersByTimeAsync(1001);
+  await expect(task).resolves.toMatchObject({current:{truncated:true},parentState:'none'});await collector.close();vi.useRealTimers();
+ });
+});
