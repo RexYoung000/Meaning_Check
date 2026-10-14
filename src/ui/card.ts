@@ -42,6 +42,7 @@ export class ResultCard {
     this.host.addEventListener('keyup',event=>event.stopPropagation());
     if(mount===document.body||mount===document.documentElement)document.body.append(this.host);else mount.after(this.host);
     this.position();
+    this.phase('preparing');
   }
   position(): void {
     this.host.dataset.theme = darkTheme() ? 'dark' : 'light';
@@ -143,7 +144,7 @@ export class ResultCard {
     this.reset();
     this.setCaption(errorText(this.language,code,message));
     this.content.append(node('p', this.copy('noResult'), 'summary-text'), node('p', errorText(this.language,code,message), 'error-message'));
-    if(['input-limit','truncated-input','bad-input','missing-key','disabled'].includes(code))this.content.append(node('p',this.copy('notSubmitted'),'muted'));
+    if(['input-limit','truncated-input','bad-input','page-read','missing-key','disabled'].includes(code))this.content.append(node('p',this.copy('notSubmitted'),'muted'));
     if (code === 'missing-key') this.content.append(button(this.copy('openSettings'), () => this.actions.settings(), 'button primary'));
     else if (this.bundle && code !== 'original-post') {
       if (code !== 'input-limit' && code !== 'truncated-input') this.content.append(button(this.copy('reanalyze'), () => this.actions.analyze(), 'button primary'));

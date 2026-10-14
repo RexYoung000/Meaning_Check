@@ -44,10 +44,18 @@ export function readPost(article: Element): Post | undefined {
   return { ...ref, text: body, hasMedia, truncated: !!showMoreElement(article), origin: 'x' };
 }
 function hasTopConnector(article: Element): boolean {
-  return owned<HTMLElement>(article, '[aria-hidden="true"]').some(el => el.className.includes('-top-') && (el.className.includes('w-0.5') || el.className.includes('left-1/2')));
+  return owned<Element>(article, '[aria-hidden="true"]').some(el => {
+    if (!(el instanceof HTMLElement)) return false;
+    const classes=el.getAttribute('class') ?? '';
+    return classes.includes('-top-') && (classes.includes('w-0.5') || classes.includes('left-1/2'));
+  });
 }
 function hasBottomConnector(article: Element): boolean {
-  return owned<HTMLElement>(article, '[aria-hidden="true"]').some(el => el.className.includes('-bottom-') && (el.className.includes('w-0.5') || el.className.includes('left-1/2')));
+  return owned<Element>(article, '[aria-hidden="true"]').some(el => {
+    if (!(el instanceof HTMLElement)) return false;
+    const classes=el.getAttribute('class') ?? '';
+    return classes.includes('-bottom-') && (classes.includes('w-0.5') || classes.includes('left-1/2'));
+  });
 }
 function hasReplyMarker(article: Element): boolean {
   return owned<HTMLElement>(article, '[data-testid="replyingTo"], [data-testid="socialContext"]').some(el => /replying|回复|回应/i.test(el.textContent ?? '')) || /(?:Replying to|回复 @|回复给)/i.test(article.textContent ?? '');

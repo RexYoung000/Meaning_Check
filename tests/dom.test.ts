@@ -18,6 +18,16 @@ describe('现代 X 与经典 X 正文',()=>{
 });
 
 describe('独立帖、经典详情和可靠展开信号',()=>{
+ it('时间线中的原生 SVG 图标不会中断上下文读取或充当回复连线',()=>{
+  history.replaceState({},'', '/home');
+  document.body.innerHTML='<main>'+article('3','A self-contained update','feed').replace('<div class="avatar">','<div class="avatar"><svg aria-hidden="true" class="absolute -top-1 left-1/2" viewBox="0 0 24 24"><path d="M0 0h1v1z"></path></svg>')+'</main>';
+  expect(readPageSnapshot(document,'https://x.com/person/status/3')).toMatchObject({parentState:'unlinked',current:{id:'3'}});
+ });
+ it('回复和父帖含 SVG 图标时仍能识别 HTML 父链',()=>{
+  const withIcon=(html:string)=>html.replace('<div class="avatar">','<div class="avatar"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M0 0h1v1z"></path></svg>');
+  document.body.innerHTML='<main>'+withIcon(article('2','parent','root'))+withIcon(article('3','reply','reply',true))+'</main>';
+  expect(readPageSnapshot(document,location.href)).toMatchObject({parentState:'known',parent:{id:'2'}});
+ });
  it('时间线无回复关联时仅选择本条，不声称父帖不存在',()=>{
   history.replaceState({},'', '/home');document.body.innerHTML='<main>'+article('2','Another unrelated post','feed')+article('3','A self-contained update','feed')+'</main>';
   expect(readPageSnapshot(document,'https://x.com/person/status/3')).toMatchObject({parentState:'unlinked',current:{id:'3'}});

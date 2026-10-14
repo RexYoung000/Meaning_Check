@@ -53,10 +53,13 @@ export function startReader(ctx:ContentScriptContext,selectionOnly=false):void {
     if(focus&&job.trigger.isConnected)job.trigger.focus({preventScroll:true});
   };
   const closeAll=()=>{for(const job of readings.values())close(job,false);};
-  const send=(job:Reading,command:ClientCommand)=>{
-    if(job.busy)return;if(!job.port&&!connect(job))return;
-    job.busy=true;stopHeartbeat(job);
+  const send=(job:Reading,prepare:()=>ClientCommand)=>{
+    if(job.busy)return;
     job.card.phase('preparing');
+    let command:ClientCommand;
+    try{command=prepare();}catch{job.card.error('page-read','',job.bundle);return;}
+    if(!job.port&&!connect(job))return;
+    job.busy=true;stopHeartbeat(job);
     job.heartbeat=setInterval(()=>{try{job.port?.postMessage({type:'heartbeat'});}catch{stopHeartbeat(job);}},HEARTBEAT_MS);
     try{job.port!.postMessage(command);}catch{job.busy=false;stopHeartbeat(job);job.card.error('background-restarted','连接已断开。');}
   };
@@ -88,22 +91,22 @@ export function startReader(ctx:ContentScriptContext,selectionOnly=false):void {
     const job={} as Reading;
     Object.assign(job,{key,article,post,selection:!!selection,trigger,busy:false});
     job.card=new ResultCard(mount,styles,{
-      close:()=>close(job),retryContext:()=>{
+      close:()=>close(job),retryContext:()=>send(job,()=>{
         const fresh=job.selection?job.post:adapter.readPost(job.article);if(fresh?.id===job.post.id)job.post=fresh;
-        send(job,{type:'start',post:job.post,...(job.selection?{selection:true}:{snapshot:adapter.readPageSnapshot(document,job.post.url)})});
-      },
-      analyze:manual=>{
+        return {type:'start',post:job.post,...(job.selection?{selection:true}:{snapshot:adapter.readPageSnapshot(document,job.post.url)})};
+      }),
+      analyze:manual=>send(job,()=>{
         // Refresh only the already-selected sources; never override a manual edit.
         if(job.bundle&&!job.selection){
           const visible=[...document.querySelectorAll(selector)].map(el=>adapter.readPost(el)).filter((p):p is Post=>!!p);
           job.bundle={...job.bundle,posts:job.bundle.posts.map(p=>p.origin==='manual'?p:visible.find(latest=>latest.id===p.id)??p)};
           const fresh=visible.find(p=>p.id===job.post.id);if(fresh)job.post=fresh;
         }
-        send(job,{type:'analyze',bundle:job.bundle,manual});
-      },settings,
+        return {type:'analyze',bundle:job.bundle,manual};
+      }),settings,
     },lang());
     readings.set(key,job);
-    send(job,{type:'start',post,...(selection?{selection:true}:{snapshot:adapter.readPageSnapshot(document,post.url)})});
+    send(job,()=>({type:'start',post,...(selection?{selection:true}:{snapshot:adapter.readPageSnapshot(document,post.url)})}));
     if(selection){selectionHost?.remove();selectionHost=undefined;}
   };
   const attach=(article:HTMLElement)=>{

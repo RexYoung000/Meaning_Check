@@ -40,6 +40,7 @@ const errors:Record<string,[string,string]> = {
   'input-limit':['上下文超过 12,000 字符，请缩减相关文字后分析。','Context exceeds 12,000 characters. Shorten relevant text before analyzing.'],
   'truncated-input':['文字尚未完全展开，请展开正文或手动补充完整文字。','Text has not fully expanded. Expand it or provide complete text manually.'],
   'bad-input':['没有读到完整、对应的正文，请重新选择。','The text could not be read completely or matched. Select it again.'],
+  'page-read':['页面文字或帖子关系读取中断，请点击重试。','Reading the page text or post relationship failed. Retry manually.'],
   'original-post':['这条是原帖，请对它下面的回复使用此按钮。','This is the original post. Use the button on a reply below it.'],
   'background-restarted':['后台已重启。可以手动重试，不会自动再次请求模型。','The background restarted. Retry manually; no model request is repeated automatically.'],
   'disabled':['此网站或插件已暂停，请在设置中开启。','This site or the extension is paused. Enable it in settings.'],

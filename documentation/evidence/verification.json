@@ -1,18 +1,23 @@
 {
-  "version": "0.3.1",
+  "version": "0.3.2",
   "date": "2026-10-14",
   "scope": "Actual extension in isolated Chrome for Testing 156; X / Reddit / custom pages and APIs are mocked",
   "unitIntegration": {
-    "passed": 92,
+    "passed": 94,
     "failed": 0
   },
   "browser": {
-    "passed": 36,
+    "passed": 38,
     "failed": 0,
     "runs": [
       {
-        "command": "pnpm exec playwright test --max-failures=3",
-        "passed": 36,
+        "command": "pnpm exec playwright test tests/e2e/startup.spec.ts --max-failures=2",
+        "passed": 2,
+        "failed": 0
+      },
+      {
+        "command": "pnpm exec playwright test --max-failures=2",
+        "passed": 38,
         "failed": 0
       }
     ],
@@ -160,6 +165,14 @@
       {
         "name": "Reddit 根帖直接按独立帖子解读",
         "passed": true
+      },
+      {
+        "name": "原生 SVG 的时间线卡片正常加载、计时和结果，重复点击不重复请求",
+        "passed": true
+      },
+      {
+        "name": "读取异常显示可重试错误，不请求模型；主动重试恢复正常加载",
+        "passed": true
       }
     ]
   },
@@ -167,32 +180,32 @@
   "build": "passed",
   "zip": "passed",
   "packageCheck": "passed",
-  "manifestSha256": "b0a095bff6e2c23593bd71f261b40b3bf9ce1efbb3f8f3609f6e6bbf7328c149",
+  "manifestSha256": "f21a8dec0260ae5ab118b1a4cb005ababdafdd020b4d528db4a930a6921e3c26",
   "buildFilesSha256": {
     "LICENSE.txt": "656bb9238233d88cdaf95b96d21fb696ba553c522503411711be72897b040f86",
     "_locales/en/messages.json": "20d6cf944f70b854e38e3534f0f134729fce7dddf1d8cc7cafd0463488082b7c",
     "_locales/zh_CN/messages.json": "57ee1c2149dbcb1ac2828226334b3b05daf214419eb0086abedc1371d24a0689",
     "assets/options-DiqgAPxV.css": "7e5fd39eb24176f80dd64a93d16994e9bd86548d546281746cb3aee63b9d52bd",
-    "background.js": "ac685852946a8c13c1cb71afd831216d931b16510058bebb24c85791f22f827f",
+    "background.js": "9166e4d13ae550c009e6b790b0d360e912b1dfa2bf2862c2d2bf425e90250c80",
     "chunks/models-CTRIWj60.js": "01f4f4de3350c0a0b8dac43ef6f47af316dbc3038d7c473ea670023020477636",
-    "chunks/navigation-CDMvCuwx.js": "a3913ab54050bcb4ffd9e30b0c82b491ae56281f050e2c92dcbfdf457a7781ff",
-    "chunks/options-EJARtPcS.js": "0f9a72d5c13fa26a8b254e6e51ed79a6c7eec974d7de96ea3c3e921a91f91fb4",
-    "chunks/page-C3dKd1i2.js": "e481c3cd6037efc1de68787df34d617e4c8b5e8a219530b8635f290c9260093d",
-    "chunks/popup-C97T_wym.js": "68c61bf97ee5576976bb8a1f83e42ed1ae5947adf94112fb585c9ce1c27ca8b7",
-    "chunks/welcome-CFv1fw3i.js": "8223a48fc19b51b9fa882d255aba520526aeb67596eac0f61f55802131cfc301",
-    "content-scripts/selection.js": "3c2e34351c35b30f736dca64e7188d6d1102df47865942b32285cf7fdfba3b82",
-    "content-scripts/x.js": "d66ed7add3e67bf7f5240928287ff2e7f82fd20162775f826844807239f83e64",
+    "chunks/navigation-DjP5srWw.js": "eb968e65bcf2cd5b1b5a6b3aa5217e8a1d0cc19d12c666c48c6303c819647c39",
+    "chunks/options-RuaZVGuA.js": "b8303964bec3e471ad58b4700979b6ac5afc569f029e64e5f72df4f9ea518673",
+    "chunks/page-qND_axn4.js": "c0ca9677e38b951950b5fa3c07b774224cc16c1ffd019735904726e9183a34ca",
+    "chunks/popup-DNB81HEI.js": "381074c001a834c394e9c660b23ab0b80a14fac037ce510514cd36cb3cd0bf4a",
+    "chunks/welcome-D3ISbQnT.js": "fa5e6b9dcc1ba407722af785bcb6050eb22881c7d45cb819fa677751d839ff0c",
+    "content-scripts/selection.js": "b7a19e777628a70abe81d0114b360b93250e1ddb0bf872dc88b2eb6c0e55686b",
+    "content-scripts/x.js": "e8fec0ed4d63116631ea98dbe1b50dfee2248c28664d5eee73e2e2a936084fff",
     "icon.svg": "d3ca3a658e90e9f964904d5f3b6e25e585c2bd6b3c0f4a14fe94662d4c28456e",
     "icons/128.png": "7cf8a307d50671035aebfcb61f3e58df9963da5f2c1306f82df75fcb54552171",
     "icons/16.png": "9f93f68f26ae6a2c9ed4fe2531e7cc8a892044c627c629017469f10adcb739af",
     "icons/32.png": "27bb28c7135f2efd0bd02fb4bed89774c58569d7017bc7a39e3b963dc0d23a75",
     "icons/48.png": "18b353afca24d8d4214fa1b09871090168fb1f66e91ada75968a012a43644f65",
-    "manifest.json": "b0a095bff6e2c23593bd71f261b40b3bf9ce1efbb3f8f3609f6e6bbf7328c149",
-    "options.html": "6cd8fcd35fbbfb339a50f411aaa401bb333cc4a27aa87a55d6617ed3d6b4d0c7",
-    "popup.html": "17e98dd67edfd81f0a12b4265647ff800158e4d9d127f057f88f115ccb51ec65",
-    "welcome.html": "b42c9bfdaea98ac394ac22affd56dc6bc569ba28ae54e0864311ee8b66b8b412"
+    "manifest.json": "f21a8dec0260ae5ab118b1a4cb005ababdafdd020b4d528db4a930a6921e3c26",
+    "options.html": "b43f790b09a235a6ebb5c0780b02b4486fce0cb8c245388d2f84ad7ba9e1278e",
+    "popup.html": "19b36e630b006b9d5886f71a01b11620c99f0a81c27f912127b674b901b2b010",
+    "welcome.html": "440ed967d3ae489f9937105b899531d2365d2c9c1206ad4176a4437880619722"
   },
-  "archive": ".output/meaning-check-0.3.1-chrome.zip",
+  "archive": ".output/meaning-check-0.3.2-chrome.zip",
   "protocolsMocked": [
     "chat",
     "responses",
@@ -200,11 +213,11 @@
   ],
   "dia": {
     "installed": true,
-    "lastObservedVersion": "0.3.1",
-    "versionEvidence": "Native Dia Details UI after Reload; extension path and ID retained",
-    "filesUpdatedTo": "0.3.1",
+    "lastObservedVersion": "0.3.2",
+    "versionEvidence": "Native Details after Reload plus a new X timeline document displaying analysis and a valid result",
+    "filesUpdatedTo": "0.3.2",
     "matchedBuildFiles": 21,
-    "backup": ".output/dia-backups/20261014-144005",
+    "backup": ".output/dia-backups/20261014-162919",
     "permissionsChanged": false,
     "profileStorageTouched": false,
     "upgradeReloadVerified": true,
@@ -229,12 +242,28 @@
       "multiCardConfirmed": false,
       "visualScreenshotSaved": false
     },
-    "limitation": "One standalone sample; real reply parent chains, Reddit layouts and multi-card model quality require further acceptance"
+    "limitation": "One standalone sample; real reply parent chains, Reddit layouts and multi-card model quality require further acceptance",
+    "nativeInitialLoadingTextVerified": true,
+    "timelineResultVerified": true,
+    "timelineSample": {
+      "url": "https://x.com/SamVale29/status/2109997444654363091",
+      "pageKind": "X home timeline",
+      "observed": [
+        "Analysis phase, elapsed time and 60-second limit",
+        "Valid inline Chinese result, tone, function and source quotes",
+        "Current-only scope discloses unconfirmed relationship"
+      ],
+      "inferenceRequests": 1,
+      "elapsedSecondsShown": 6.1,
+      "totalTokensShown": 1365,
+      "visualScreenshotSaved": false
+    },
+    "upgradeLimitation": "Old document still ran prior script after Details reload; a new document confirmed updated runtime. Manifest version alone is insufficient."
   },
   "liveModel": {
-    "calls": 2,
+    "calls": 3,
     "countScope": "Agent recorded real inference calls; user calls are not audited",
-    "verified": "Single standalone post and explicit second-submission path only",
+    "verified": "Prior standalone detail and second submission; current-version real X timeline loading/result",
     "provider": "DeepSeek",
     "modelShown": "DeepSeek V4.1 Flash",
     "operations": [
@@ -242,27 +271,37 @@
         "action": "initial-check",
         "elapsedSecondsShown": 7.7,
         "totalTokensShown": 1641,
-        "status": "valid-result"
+        "status": "valid-result",
+        "version": "0.3.1"
       },
       {
         "action": "manual-submit-same-text",
         "elapsedSecondsShown": 7.0,
         "totalTokensShown": 1420,
+        "status": "valid-result",
+        "version": "0.3.1"
+      },
+      {
+        "version": "0.3.2",
+        "action": "timeline-check",
+        "url": "https://x.com/SamVale29/status/2109997444654363091",
+        "elapsedSecondsShown": 6.1,
+        "totalTokensShown": 1365,
         "status": "valid-result"
       }
     ],
     "firstBatchLimit": 20,
     "automaticRetries": 0,
-    "remaining": "10-example interpretation acceptance, other providers, true reply chains"
+    "remaining": "10-example interpretation acceptance, other providers, true reply chains",
+    "currentVersionCalls": 1
   },
   "evidence": "Mock fixture results are not live provider or model quality evidence",
-  "archiveSha256": "894ee60f0eb67cc4fc65c9246e5925b0986ea89f7c438cbf1a21fd478d636a28",
+  "archiveSha256": "662757671799a571b5f5f1444a268c285e6fa407c1b0b925d344221b1dfa3b65",
   "publication": {
     "repository": "https://github.com/RexYoung000/Meaning_Check",
     "status": "public-source-pushed",
     "visibility": "public",
     "license": "MIT",
-    "sourceFixCommit": "b12181dd50a151ca0642975ae647af2c67431322",
     "bilingualReadmesVerified": true,
     "profile": "https://github.com/RexYoung000",
     "profileRepository": "https://github.com/RexYoung000/RexYoung000",
@@ -274,12 +313,25 @@
       "RexYoung000/Meaning_Check"
     ],
     "storeRelease": false,
-    "githubRelease": false
+    "githubRelease": false,
+    "priorSourceFixCommit": "b12181dd50a151ca0642975ae647af2c67431322",
+    "sourceFixVersion": "0.3.2"
   },
   "credentialPreflight": {
     "historicalTextBlobsScanned": 174,
     "currentTrackedAndNonignoredFilesScanned": true,
     "credentialPatternMatches": 0,
-    "limitation": "Pattern scan, not an exhaustive guarantee"
+    "limitation": "Pattern scan, not an exhaustive guarantee",
+    "historicalScanVersion": "0.3.1",
+    "currentScanVersion": "0.3.2",
+    "currentTextFilesScanned": 81
+  },
+  "regressionBeforeFix": {
+    "command": "pnpm exec vitest run tests/dom.test.ts",
+    "failed": 2,
+    "passed": 17,
+    "error": "className.includes is not a function",
+    "nativeSameErrorObserved": true,
+    "cause": "SVG nodes were treated as HTML class strings; snapshot evaluated outside feedback/error handling"
   }
 }

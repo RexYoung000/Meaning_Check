@@ -21,7 +21,9 @@ This actual-extension screenshot uses mocked pages and model output to illustrat
 
 ## Install and start
 
-The current version is **0.3.1 POC**. Build it from source; there is no store release or published Release installer yet.
+The current version is **0.3.2 POC**. Build it from source; there is no store release or published Release installer yet.
+
+0.3.2 fixes cards that showed only a header after clicking a timeline post: native icons no longer interrupt relationship reading, preparation appears immediately, and page-read failures offer a clear error and explicit retry.
 
 Requires Node.js 24 and pnpm 10:
 
@@ -38,7 +40,7 @@ pnpm build
 4. Set interface and analysis languages in **Languages**, and manage enabled origins and paths in **Websites**.
 5. Refresh X / Reddit and click **Check meaning**. On custom sites, select text, confirm optional background, then analyze.
 
-For an existing install, update the build, reload the extension, confirm 0.3.1, and refresh the page. If the browser loaded a separately extracted copy, update that copy first; editing the source directory alone will not update it. Preserve the extension path / ID so local settings survive.
+For an existing install, update the build, reload the extension, confirm 0.3.2, and refresh the page. If the browser loaded a separately extracted copy, update that copy first; editing the source directory alone will not update it. Preserve the extension path / ID so local settings survive.
 
 ## How missing context is determined
 
@@ -71,7 +73,7 @@ pnpm test:e2e
 pnpm check:package
 ```
 
-Use `pnpm dev` for development and `pnpm zip` for `.output/meaning-check-0.3.1-chrome.zip`. Edit `public/icon.svg` and run `pnpm icons` to regenerate PNGs. Builds include root LICENSE automatically.
+Use `pnpm dev` for development and `pnpm zip` for `.output/meaning-check-0.3.2-chrome.zip`. Edit `public/icon.svg` and run `pnpm icons` to regenerate PNGs. Builds include root LICENSE automatically.
 
 Tests use disposable isolated browser profiles and mock APIs, not personal browser data. Passing automation does not prove live provider quality. Actual results and remaining acceptance items are recorded in [verification notes](documentation/tests.md).
 
