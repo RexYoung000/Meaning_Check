@@ -8,10 +8,13 @@ import {Collector,cleanupOrphans} from '../x/collector';
 import {applyManual,bundleOf,resolveContext,selectionBundle,validateBundle,validatePost,validateSnapshot} from '../analysis/context';
 import {analyze,listModels} from '../analysis/provider';
 import {errorText} from '../shared/i18n';
+import {AnalysisQueue} from '../analysis/queue';
+import {openSettings} from '../shared/navigation';
 
 type Port=Browser.runtime.Port;
 export default defineBackground(()=>{
-  const activeByTab=new Map<number,{port:Port;cancel():void}>();
+  const jobs=new Map<Port,{cancel():void}>();
+  const queue=new AnalysisQueue(2);
   const ready=initializeSettings().then(cleanupOrphans).then(syncScripts);ready.catch(()=>{});
   async function syncScripts():Promise<void> {
     const config=await publicConfig();const all=await browser.scripting.getRegisteredContentScripts();
@@ -26,7 +29,7 @@ export default defineBackground(()=>{
   }
   async function changed():Promise<void> {
     const config=await publicConfig();
-    for(const [id,job] of activeByTab)if(!siteFor(job.port.sender?.url,config.preferences)){job.cancel();activeByTab.delete(id);}
+    for(const [port,job] of jobs)if(!siteFor(port.sender?.url,config.preferences)){job.cancel();jobs.delete(port);}
     await syncScripts();
     const tabs=await browser.tabs.query({});
     for(const tab of tabs)if(tab.id!==undefined)void browser.tabs.sendMessage(tab.id,{type:'settings-changed'}).catch(()=>{});
@@ -46,7 +49,7 @@ export default defineBackground(()=>{
     if(message?.type==='open-settings'||message?.type==='open-guide'){
       void ready.then(async()=>{
         const config=await publicConfig();if(!trusted(sender)&&!siteFor(sender.url,config.preferences))return {ok:false};
-        if(message.type==='open-settings')await browser.runtime.openOptionsPage();else await browser.tabs.create({url:browser.runtime.getURL('/welcome.html')});return {ok:true};
+        if(message.type==='open-settings')await openSettings();else await browser.tabs.create({url:browser.runtime.getURL('/welcome.html')});return {ok:true};
       }).then(sendResponse).catch(()=>sendResponse({ok:false}));return true;
     }
   });
@@ -79,20 +82,19 @@ export default defineBackground(()=>{
     }
     const tabId=port.sender?.tab?.id;
     if(!port.name.startsWith(PORT_PREFIX)||port.sender?.id!==browser.runtime.id||tabId===undefined){port.disconnect();return;}
-    const old=activeByTab.get(tabId);old?.cancel();
-    let disconnected=false,busy=false,current:Post|undefined,initial:PageSnapshot|undefined,bundle:ContextBundle|undefined,controller:AbortController|undefined;
+    let disconnected=false,busy=false,current:Post|undefined,initial:PageSnapshot|undefined,bundle:ContextBundle|undefined,controller:AbortController|undefined,startedAt=0;
     const collector=new Collector(crypto.randomUUID());
     const emit=(event:JobEvent)=>{if(!disconnected)try{port.postMessage(event);}catch{}};
     const stop=()=>{controller?.abort();void collector.close().catch(()=>{});};
-    activeByTab.set(tabId,{port,cancel:()=>{disconnected=true;stop();port.disconnect();}});
-    port.onDisconnect.addListener(()=>{disconnected=true;stop();if(activeByTab.get(tabId)?.port===port)activeByTab.delete(tabId);});
+    jobs.set(port,{cancel:()=>{disconnected=true;stop();port.disconnect();}});
+    port.onDisconnect.addListener(()=>{disconnected=true;stop();jobs.delete(port);});
     const runAnalysis=async(manual?:Parameters<typeof applyManual>[1])=>{
       if(!bundle||!controller)return;bundle=applyManual(bundle,manual);const config=await publicConfig();if(!siteFor(port.sender?.url,config.preferences))throw new UserError('disabled','当前网站已关闭。');const p=await activeConnection();
-      emit({type:'phase',phase:'analysis'});const response=await analyze(bundle,p,controller.signal,fetch,config.outputLanguage);
+      emit({type:'phase',phase:'analysis',startedAt});const response=await analyze(bundle,p,controller.signal,fetch,config.outputLanguage);
       if(!controller.signal.aborted)emit({type:'result',bundle,response});
     };
     const runContext=async()=>{
-      if(!current||!controller)return;await activeConnection();emit({type:'phase',phase:'context'});
+      if(!current||!controller)return;await activeConnection();emit({type:'phase',phase:'context',startedAt});
       const resolved=await resolveContext(current,initial,(url,signal)=>collector.read(url,signal),controller.signal);await collector.close();bundle=resolved.bundle;
       if(controller.signal.aborted)return;
       if(resolved.original)throw new UserError('original-post','这条是原帖。请对它下面的回复使用「帮我确认意思」。');
@@ -101,12 +103,20 @@ export default defineBackground(()=>{
     port.onMessage.addListener((raw:ClientCommand)=>{
       if(raw?.type==='heartbeat')return;if(raw?.type==='cancel'){stop();return;}if(busy||disconnected)return;
       busy=true;controller=new AbortController();const operation=controller;let timedOut=false;
-      const timer=setTimeout(()=>{timedOut=true;operation.abort();void collector.close();emit({type:'error',code:'analysis-timeout',message:'分析超过等待时间。',...(bundle?{bundle}:{})});},ANALYSIS_TIMEOUT_MS);
+      let timer:ReturnType<typeof setTimeout>|undefined,release:(()=>void)|undefined;
+      const queuedAt=Date.now();
       const task=async()=>{
         await ready;if(disconnected||operation.signal.aborted)return;
         const config=await publicConfig();const site=siteFor(port.sender?.url,config.preferences);if(!site)throw new UserError('disabled','当前网站已关闭。');
+        if(raw?.type==='start'&&raw.selection){
+          if(site.adapter!=='selection')throw new UserError('bad-input','选区来源不对应。');bundle=selectionBundle(raw.post,port.sender!.url!);await activeConnection();emit({type:'context',bundle});return;
+        }
+        if(!['start','retry-context','analyze'].includes(raw?.type))throw new UserError('bad-input','无效操作。');
+        release=await queue.acquire(operation.signal,position=>emit({type:'queued',position,queuedAt}));
+        if(disconnected||operation.signal.aborted)return;
+        startedAt=Date.now();
+        timer=setTimeout(()=>{timedOut=true;operation.abort();void collector.close();emit({type:'error',code:'analysis-timeout',message:'分析超过等待时间。',...(bundle?{bundle}:{})});},ANALYSIS_TIMEOUT_MS);
         if(raw?.type==='start'){
-          if(raw.selection){if(site.adapter!=='selection')throw new UserError('bad-input','选区来源不对应。');bundle=selectionBundle(raw.post,port.sender!.url!);await activeConnection();emit({type:'context',bundle});return;}
           current=validatePost(raw.post);if(new URL(current.url).origin!==new URL(site.origin).origin)throw new UserError('bad-input','帖子来源不对应。');
           initial=validateSnapshot(raw.snapshot,current.id);if(initial?.parent&&new URL(initial.parent.url).origin!==new URL(current.url).origin)initial=undefined;
           if(current.truncated||initial?.parentState==='unknown')initial=undefined;await runContext();
@@ -116,7 +126,7 @@ export default defineBackground(()=>{
           await runAnalysis(raw.manual);
         }
       };
-      void task().catch(async error=>{if(!operation.signal.aborted&&!timedOut){const lang=(await publicConfig()).uiLanguage;const safe=safeError(error);emit({type:'error',code:safe.code,message:errorText(lang,safe.code,safe.message),...(bundle?{bundle}:{})});}}).finally(()=>{clearTimeout(timer);busy=false;void collector.close().catch(()=>{});});
+      void task().catch(async error=>{if(!operation.signal.aborted&&!timedOut){const lang=(await publicConfig()).uiLanguage;const safe=safeError(error);emit({type:'error',code:safe.code,message:errorText(lang,safe.code,safe.message),...(bundle?{bundle}:{})});}}).finally(async()=>{clearTimeout(timer);await collector.close().catch(()=>{});release?.();busy=false;});
     });
   });
 });

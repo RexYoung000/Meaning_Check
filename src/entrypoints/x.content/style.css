@@ -1,17 +1,22 @@
 /* 样式规则来源：DESIGN.md；由每个 Shadow Root 载入，不改变 X 页面样式。 */
 :host { all: initial; --surface:#fff; --ink:#0f1419; --muted:#536471; --line:#cfd9de; --accent:#0067a5; font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif; color:var(--ink); font-size:14px; line-height:1.6; }
 :host([data-theme="dark"]) { --surface:#15202b; --ink:#f7f9f9; --muted:#a8b5bf; --line:#536471; --accent:#8ecdf8; color-scheme:dark; }
-:host(meaning-check-entry) { display:block; width:max-content; max-width:100%; margin-top:6px; }
+:host(meaning-check-entry) { display:block; max-width:100%; margin-top:8px; }
 :host(meaning-check-entry[data-visible="false"]) { display:none; }
-:host(meaning-check-card) { position:fixed; display:block; z-index:2147483646; }
+:host(meaning-check-card) { display:block; width:100%; min-width:0; max-width:100%; margin:10px 0 6px; }
 * { box-sizing:border-box; }
 button,input,textarea { font:inherit; }
 button { cursor:pointer; }
 button:disabled { cursor:default; opacity:.65; }
 button:focus-visible,a:focus-visible,summary:focus-visible,textarea:focus-visible { outline:3px solid var(--accent); outline-offset:3px; }
 .entry-button { display:block; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--accent); padding:3px 9px; font-size:12px; line-height:1.6; }
-.card { background:var(--surface); color:var(--ink); border:1px solid var(--line); border-radius:14px; box-shadow:0 8px 28px rgb(0 0 0 / .15); overflow:auto; overscroll-behavior:contain; }
-.card-header { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 16px; border-bottom:1px solid var(--line); }
+.card { background:var(--surface); color:var(--ink); border:1px solid var(--line); border-radius:14px; box-shadow:0 2px 8px rgb(0 0 0 / .05); }
+.card-header { display:flex; align-items:center; flex-wrap:wrap; justify-content:space-between; gap:4px 8px; padding:10px 12px; border-bottom:1px solid var(--line); }
+.card-tools { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-left:auto; }
+.text-button,.entry-settings { padding:3px 0; background:transparent; border:0; font-size:12px; color:var(--muted); }
+.text-button:hover,.entry-settings:hover { color:var(--accent); text-decoration:underline; }
+.entry-row { display:flex; align-items:center; flex-wrap:wrap; gap:10px; }
+.collapsed-summary { padding:12px 16px; margin:0; color:var(--muted); font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 h2 { font-size:14px; font-weight:600; margin:0; }
 .icon-button { border:0; background:transparent; color:var(--muted); width:28px; height:28px; padding:0; font-size:22px; border-radius:6px; }
 .icon-button:hover { background:color-mix(in srgb,var(--muted) 12%,transparent); }
@@ -19,7 +24,11 @@ h2 { font-size:14px; font-weight:600; margin:0; }
 p { margin:0 0 12px; overflow-wrap:anywhere; }
 .summary-text { font-size:18px; font-weight:600; line-height:1.55; margin-bottom:16px; }
 .muted,.meta { color:var(--muted); font-size:12px; }
-.progress { font-weight:600; }
+.progress { font-weight:600; display:flex; align-items:center; gap:10px; }
+.spinner { width:16px; height:16px; border:2px solid var(--line); border-top-color:var(--accent); border-radius:50%; flex:none; }
+.loading-time { font-variant-numeric:tabular-nums; }
+@media (prefers-reduced-motion:no-preference) { .spinner { animation:mc-spin .9s linear infinite; } }
+@keyframes mc-spin { to { transform:rotate(360deg); } }
 .traits { display:grid; grid-template-columns:65px 1fr; gap:6px 10px; margin:0 0 18px; }
 dt { color:var(--muted); } dd { margin:0; }
 h3 { font-size:12px; font-weight:600; color:var(--muted); margin:0 0 8px; }
@@ -36,7 +45,7 @@ a { color:var(--accent); text-decoration:underline; text-underline-offset:3px; f
 summary { cursor:pointer; font-size:12px; color:var(--accent); padding:5px 0; }
 details { margin:12px 0 0; } details[open] summary { margin-bottom:8px; }
 .source { margin:12px 0; } .source strong { font-size:12px; }
-.source-text { font-size:12px; white-space:pre-wrap; margin-top:5px; max-height:180px; overflow:auto; }
+.source-text { font-size:12px; white-space:pre-wrap; margin-top:5px; }
 label { display:block; margin-bottom:12px; font-size:12px; color:var(--muted); }
 textarea { display:block; width:100%; padding:8px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--ink); resize:vertical; margin-top:5px; line-height:1.5; }
 .meta { margin:12px 0 0; }

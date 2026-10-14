@@ -9,6 +9,7 @@ export function item(id:string,text:string,kind:'root'|'reply'|'feed',focal=fals
 export function html(id:string): string {
   const current = id==='1' ? item('1','If you hate Gemini like me\n\nLets connect','feed',true)
     : id==='11' ? item('1','If you hate Gemini like me\n\nLets connect','root')+item('11','😂😂','reply',true)
+    : id==='6' ? item('1','If you hate Gemini like me\n\nLets connect','root')+item('6','Another nice try','reply',true)
     : id==='9' ? item('9','Wait, are you serious?','reply',true)
     : id==='4' ? item('3','Hahaha))) nice try','root')+item('4','Exactly, nice try','reply',true)
     : id==='10' ? item('1','If you hate Gemini like me\n\nLets connect','root')+item('10','a'.repeat(12001),'reply',true)

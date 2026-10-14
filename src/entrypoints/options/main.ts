@@ -26,12 +26,14 @@ function render():void {
   shell.append(nav,main);app.replaceChildren(header,shell);
 }
 function renderStart(main:HTMLElement):void {
+  main.append(node('p',text('settingsRoute'),'muted'));
   const box=node('section',undefined,'box stack');
   const enabled=input('','checkbox');enabled.checked=config.preferences.enabled;enabled.addEventListener('change',()=>{void task(async()=>{config=await rpc<PublicConfig>({type:'preferences',patch:{enabled:enabled.checked}});render();});});
   const toggle=label(text(config.preferences.enabled?'enabled':'paused'),enabled);toggle.className='check';box.append(toggle);
   const active=config.profiles.find(p=>p.id===config.activeProfileId);box.append(node('p',active?text('activeModel')+' · '+modelName(active.provider,active.model):text('noConnection')));
   const row=node('div',undefined,'actions');row.append(button(text('setup'),()=>{location.hash='models';},'button primary'),button(text('guide'),openGuide,'button'));box.append(node('p',text('connectedHelp'),'muted'),row);main.append(box);
-  const how=node('section',undefined,'box section-space');how.append(node('h2',text('step3')),node('p',text('useHelp')),node('p',text('pinHelp'),'muted'),node('p',text('installHelp'),'muted'));main.append(how);
+  const choices=node('div',undefined,'actions');choices.append(button(text('configureOutput'),()=>{location.hash='languages';},'button'),button(text('configureSites'),()=>{location.hash='sites';},'button'));main.append(choices);
+  const how=node('section',undefined,'box section-space');how.append(node('h2',text('step3')),node('p',text('useHelp')),node('p',text('inlineHelp'),'muted'),node('p',text('pinHelp'),'muted'),node('p',text('installHelp'),'muted'));main.append(how);
 }
 function renderModels(main:HTMLElement):void {
   const list=node('div',undefined,'stack');
