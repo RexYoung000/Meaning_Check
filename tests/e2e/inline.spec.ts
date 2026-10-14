@@ -14,7 +14,7 @@ test('连续点三条各自在原文下加载，两条并行其余排队，结�
   await (await entry(page,'3')).click();await (await entry(page,'4')).click();await (await entry(page,'6')).click();
   await expect(page.locator('meaning-check-card')).toHaveCount(3);await expect(card(page,'6').getByText('排队中 · 第 1 条',{exact:true})).toBeVisible();
   await expect.poll(()=>state.requests.length).toBe(2);
-  await expect(card(page,'6').locator('.loading-time')).toContainText('排队不计入执行超时');
+  await expect(card(page,'6').locator('.loading-time')).toHaveText(/已排队 [0-9]+ 秒/);
   const associations=await page.locator('meaning-check-card').evaluateAll(hosts=>hosts.map(host=>({inline:getComputedStyle(host).position,entry:host.previousElementSibling?.tagName,scroll:getComputedStyle(host.shadowRoot!.querySelector('.card')!).overflowY})));
   expect(associations).toEqual(Array(3).fill({inline:'static',entry:'MEANING-CHECK-ENTRY',scroll:'visible'}));
   expect(context.pages().filter(p=>p.url().includes('mc-collector')).length).toBeLessThanOrEqual(2);
@@ -47,11 +47,11 @@ test('取消正在执行的一条释放排队，收起另一条仍继续，重�
 
 test('长表单随页面滚动，窄窗无横向溢出，空白点击不会关闭卡片',async({context,page,extensionId})=>{
   const state:NetworkState={requests:[],collectorUrls:[]};await mockNetwork(context,state);await configure(context,extensionId);await page.goto('https://x.com/person/status/9');await page.setViewportSize({width:390,height:480});await (await entry(page,'9')).click();
-  const inline=card(page,'9');await expect(inline.getByText('还缺一些上下文')).toBeVisible();await expect(inline.getByText('未取得直接父帖、原帖。请选择补充背景或用现有内容分析。')).toBeVisible();
-  await inline.getByText('手动补充或缩减文字').click();await inline.getByLabel('补充原帖').fill('Background to a public joke');
+  const inline=card(page,'9');await expect(inline.getByText('还缺一些上下文')).toBeVisible();await expect(inline.getByText('未取得它回复的内容、最初的帖子。请选择补充背景或用现有内容分析。')).toBeVisible();
+  await inline.getByText('手动补充或缩减文字').click();await inline.getByLabel('补充最初的帖子').fill('Background to a public joke');
   await inline.getByRole('button',{name:'用这些内容分析'}).scrollIntoViewIfNeeded();const old=await page.evaluate(()=>scrollY);expect(old).toBeGreaterThan(0);
   await page.mouse.move(190,200);await page.mouse.wheel(0,-250);await expect.poll(()=>page.evaluate(()=>scrollY)).toBeLessThan(old);
-  await page.locator('h1').click();await expect(inline).toHaveCount(1);await expect(inline.getByLabel('补充原帖')).toHaveValue('Background to a public joke');
+  await page.locator('h1').click();await expect(inline).toHaveCount(1);await expect(inline.getByLabel('补充最初的帖子')).toHaveValue('Background to a public joke');
   await page.setViewportSize({width:220,height:300});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
   await inline.getByRole('button',{name:'用这些内容分析'}).scrollIntoViewIfNeeded();await expect(inline.getByRole('button',{name:'用这些内容分析'})).toBeInViewport();expect(state.requests).toHaveLength(0);
   await page.setViewportSize({width:390,height:760});await inline.scrollIntoViewIfNeeded();await page.screenshot({path:'documentation/evidence/inline-manual.png',fullPage:true});
@@ -60,10 +60,10 @@ test('长表单随页面滚动，窄窗无横向溢出，空白点击不会关�
 test('加载有阶段、计时和上限，减少动效保留文字状态',async({context,page,extensionId})=>{
   let releaseContext!:()=>void,releaseApi!:()=>void;const state:NetworkState={requests:[],collectorUrls:[],holdContext:new Promise<void>(r=>releaseContext=r),holdApi:new Promise<void>(r=>releaseApi=r)};
   await mockNetwork(context,state);await configure(context,extensionId);await page.emulateMedia({reducedMotion:'reduce'});await page.goto('https://x.com/person/status/3');const trigger=await entry(page);await trigger.click();const inline=card(page,'3');
-  await expect(inline.getByText('正在补齐上下文…',{exact:true})).toBeVisible();await expect(inline.locator('.loading-time')).toContainText('补齐最多 30 秒');
-  await expect.poll(()=>inline.locator('.loading-time').textContent()).toMatch(/已执行 [1-9]\d* 秒/);expect(await inline.locator('.spinner').evaluate(el=>getComputedStyle(el).animationName)).toBe('none');
+  await expect(inline.getByText('正在读前文…',{exact:true})).toBeVisible();await expect(inline.locator('.loading-time')).toContainText('补齐上限 30 秒');
+  await expect.poll(()=>inline.locator('.loading-time').textContent()).toMatch(/已等 [1-9]\d* 秒/);expect(await inline.locator('.spinner').evaluate(el=>getComputedStyle(el).animationName)).toBe('none');
   await expect(trigger).toBeFocused();await page.screenshot({path:'documentation/evidence/inline-loading.png'});
-  releaseContext();await expect(inline.getByText('正在分析意思…',{exact:true})).toBeVisible();await expect(inline.locator('.loading-time')).toContainText('本次执行最多 60 秒');expect(state.requests).toHaveLength(1);releaseApi();await expect(inline.getByText(result.summary,{exact:true})).toBeVisible();await expect(inline.locator('.spinner')).toHaveCount(0);
+  releaseContext();await expect(inline.getByText('正在识别意图…',{exact:true})).toBeVisible();await expect(inline.locator('.loading-time')).toContainText('本次上限 60 秒');expect(state.requests).toHaveLength(1);releaseApi();await expect(inline.getByText(result.summary,{exact:true})).toBeVisible();await expect(inline.locator('.spinner')).toHaveCount(0);
 });
 
 test('回复与卡片直接打开同一设置页，保留未保存内容，无须先分析',async({context,page,extensionId})=>{

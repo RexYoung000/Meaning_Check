@@ -1,23 +1,23 @@
 {
-  "version": "0.3.2",
+  "version": "0.3.3",
   "date": "2026-10-14",
   "scope": "Actual extension in isolated Chrome for Testing 156; X / Reddit / custom pages and APIs are mocked",
   "unitIntegration": {
-    "passed": 94,
+    "passed": 107,
     "failed": 0
   },
   "browser": {
-    "passed": 38,
+    "passed": 46,
     "failed": 0,
     "runs": [
       {
-        "command": "pnpm exec playwright test tests/e2e/startup.spec.ts --max-failures=2",
-        "passed": 2,
+        "command": "pnpm exec playwright test tests/e2e/reading.spec.ts --max-failures=2",
+        "passed": 8,
         "failed": 0
       },
       {
         "command": "pnpm exec playwright test --max-failures=2",
-        "passed": 38,
+        "passed": 46,
         "failed": 0
       }
     ],
@@ -173,6 +173,38 @@
       {
         "name": "读取异常显示可重试错误，不请求模型；主动重试恢复正常加载",
         "passed": true
+      },
+      {
+        "name": "经典 X 已确认三层关系不被临时页焦点独立状态覆盖",
+        "passed": true
+      },
+      {
+        "name": "X 原生翻译在临时页恢复原文，用户页翻译保留",
+        "passed": true
+      },
+      {
+        "name": "恢复原文不成功时取消，无模型请求",
+        "passed": true
+      },
+      {
+        "name": "译文副本和隐藏原文，三角色原文与默认收起卡片",
+        "passed": true
+      },
+      {
+        "name": "主题帖缺失时继续补齐，不当直接父帖为根",
+        "passed": true
+      },
+      {
+        "name": "仅剩译文提示错误并阻止请求，原文显示后重试",
+        "passed": true
+      },
+      {
+        "name": "加载仅阶段动效、计时上限与取消",
+        "passed": true
+      },
+      {
+        "name": "X / Reddit 现有按钮及自定义选区即时切换语言",
+        "passed": true
       }
     ]
   },
@@ -213,14 +245,14 @@
   ],
   "dia": {
     "installed": true,
-    "lastObservedVersion": "0.3.2",
-    "versionEvidence": "Native Details after Reload plus a new X timeline document displaying analysis and a valid result",
-    "filesUpdatedTo": "0.3.2",
-    "matchedBuildFiles": 21,
-    "backup": ".output/dia-backups/20261014-162919",
+    "lastObservedVersion": "0.3.3",
+    "versionEvidence": "Native Details Reload plus a new X document with updated labels and three original context roles",
+    "filesUpdatedTo": "0.3.3",
+    "matchedBuildFiles": 22,
+    "backup": ".output/dia-backups/20261014-201447",
     "permissionsChanged": false,
     "profileStorageTouched": false,
-    "upgradeReloadVerified": true,
+    "upgradeReloadVerified": false,
     "fullRuntimeVerified": false,
     "settingsEntryVerifiedInVersion": "0.3.0",
     "realXEntryVerified": true,
@@ -242,7 +274,7 @@
       "multiCardConfirmed": false,
       "visualScreenshotSaved": false
     },
-    "limitation": "One standalone sample; real reply parent chains, Reddit layouts and multi-card model quality require further acceptance",
+    "limitation": "One translated reply thread plus earlier standalone/timeline samples; other real layouts, media rendering, Reddit and full multi-language model quality remain pending",
     "nativeInitialLoadingTextVerified": true,
     "timelineResultVerified": true,
     "timelineSample": {
@@ -258,12 +290,36 @@
       "totalTokensShown": 1365,
       "visualScreenshotSaved": false
     },
-    "upgradeLimitation": "Old document still ran prior script after Details reload; a new document confirmed updated runtime. Manifest version alone is insufficient."
+    "upgradeLimitation": "Old document still ran prior script after Details reload; a new document confirmed updated runtime. Manifest version alone is insufficient.",
+    "translatedReply": {
+      "url": "https://x.com/Altantoo19/status/2110320021570310175",
+      "nativeTranslationPreserved": true,
+      "sourceLanguages": [
+        "es",
+        "pt",
+        "en"
+      ],
+      "sourceRoles": {
+        "current": "2110320021570310175",
+        "parent": "2110298124648345847",
+        "root": "2110267943976067515"
+      },
+      "sourcesAndEvidenceExpandedVerified": true,
+      "compactDarkCardViewed": true,
+      "collectorsCleaned": true,
+      "visualScreenshotSaved": false,
+      "modelCalls": 2,
+      "finalElapsedSecondsShown": 21.1,
+      "finalTotalTokensShown": 3705,
+      "initialScopeFailure": "First request incorrectly labeled the reply as standalone; fixed by retaining known relationships during original-text restoration"
+    },
+    "previousCoreBuildReloadVerified": true,
+    "finalReloadBlocked": "Mac locked during last native Reload; core original/context results were verified before the final known-media metadata change"
   },
   "liveModel": {
-    "calls": 3,
+    "calls": 5,
     "countScope": "Agent recorded real inference calls; user calls are not audited",
-    "verified": "Prior standalone detail and second submission; current-version real X timeline loading/result",
+    "verified": "Native X original Spanish reply, Portuguese direct parent, English thread root, and Chinese reading after scope fix",
     "provider": "DeepSeek",
     "modelShown": "DeepSeek V4.1 Flash",
     "operations": [
@@ -288,24 +344,38 @@
         "elapsedSecondsShown": 6.1,
         "totalTokensShown": 1365,
         "status": "valid-result"
+      },
+      {
+        "version": "0.3.3",
+        "action": "native-translated-reply-initial-check",
+        "elapsedSecondsShown": 4.5,
+        "totalTokensShown": 1213,
+        "status": "valid-result-incorrect-standalone-scope"
+      },
+      {
+        "version": "0.3.3",
+        "action": "native-translated-reply-after-scope-fix",
+        "elapsedSecondsShown": 21.1,
+        "totalTokensShown": 3705,
+        "status": "valid-result-three-original-roles"
       }
     ],
     "firstBatchLimit": 20,
     "automaticRetries": 0,
-    "remaining": "10-example interpretation acceptance, other providers, true reply chains",
-    "currentVersionCalls": 1
+    "remaining": "10-example understanding acceptance, other providers and real output locales/layouts",
+    "currentVersionCalls": 2
   },
   "evidence": "Mock fixture results are not live provider or model quality evidence",
-  "archiveSha256": "662757671799a571b5f5f1444a268c285e6fa407c1b0b925d344221b1dfa3b65",
+  "archiveSha256": "73f196d3052675cf7fbb37c46dbc27877529f06f361cab4c2f25f73a7dcba78a",
   "publication": {
     "repository": "https://github.com/RexYoung000/Meaning_Check",
-    "status": "public-source-pushed",
+    "status": "public-source-update-prepared",
     "visibility": "public",
     "license": "MIT",
     "bilingualReadmesVerified": true,
     "profile": "https://github.com/RexYoung000",
     "profileRepository": "https://github.com/RexYoung000/RexYoung000",
-    "profileCommit": "ca9e65988045ced7caff7b1d66d71f4b21f9ac02",
+    "profileCommit": "29149f6028b50a113d3b465c828e44e30910f924",
     "profileFeatured": true,
     "profileUIVerified": true,
     "pinnedItemsVerified": [
@@ -314,8 +384,8 @@
     ],
     "storeRelease": false,
     "githubRelease": false,
-    "priorSourceFixCommit": "b12181dd50a151ca0642975ae647af2c67431322",
-    "sourceFixVersion": "0.3.2"
+    "priorSourceFixCommit": "4d0043f5481dfa1394babe6ce18b0ec752ab8b96",
+    "sourceFixVersion": "0.3.3"
   },
   "credentialPreflight": {
     "historicalTextBlobsScanned": 174,
@@ -323,8 +393,8 @@
     "credentialPatternMatches": 0,
     "limitation": "Pattern scan, not an exhaustive guarantee",
     "historicalScanVersion": "0.3.1",
-    "currentScanVersion": "0.3.2",
-    "currentTextFilesScanned": 81
+    "currentScanVersion": "0.3.3",
+    "currentTextFilesScanned": 82
   },
   "regressionBeforeFix": {
     "command": "pnpm exec vitest run tests/dom.test.ts",

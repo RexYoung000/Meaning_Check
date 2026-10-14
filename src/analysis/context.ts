@@ -17,22 +17,26 @@ export function bundleOf(current: Post, parent?: Post, root?: Post): ContextBund
 export function postBundle(current:Post,relation:ContextBundle['relation']='standalone'):ContextBundle {
   return {...bundleOf(current),mode:'post',relation,missing:[]};
 }
-export function validatePost(value: unknown): Post {
+export function validatePost(value: unknown, allowTranslated=false): Post {
   const p = value as Partial<Post> | null;
+  const translated=allowTranslated&&p?.origin==='x'&&p.sourceIssue==='translated'&&p.text==='';
+  if(p?.sourceIssue&&!translated)throw new UserError('original-text','没有读到原文。请显示原文后重试，不能用译文替代原文。');
   const ref = typeof p?.url === 'string' ? threadRef(p.url) : undefined;
-  if (!p || !ref || ref.id !== p.id || !['x','reddit'].includes(p.origin ?? '') || (p.origin === 'x' && !ref.id.match(/^\d+$/)) || (p.origin === 'reddit' && !ref.id.startsWith('t')) || typeof p.text !== 'string' || !p.text.trim() || p.text.length > 60_000 || typeof p.hasMedia !== 'boolean' || typeof p.truncated !== 'boolean') {
+  if (!p || !ref || ref.id !== p.id || !['x','reddit'].includes(p.origin ?? '') || (p.origin === 'x' && !ref.id.match(/^\d+$/)) || (p.origin === 'reddit' && !ref.id.startsWith('t')) || typeof p.text !== 'string' || (!p.text.trim()&&!translated) || p.text.length > 60_000 || typeof p.hasMedia !== 'boolean' || typeof p.truncated !== 'boolean') {
     throw new UserError('bad-input', '没有读到完整的帖子正文，请打开该回复详情再试。');
   }
-  return { id: ref.id, url: ref.url, text: p.text.trim(), hasMedia: p.hasMedia, truncated: p.truncated, origin: p.origin as 'x' | 'reddit' };
+  return { id: ref.id, url: ref.url, text: p.text.trim(), hasMedia: p.hasMedia, truncated: p.truncated, origin: p.origin as 'x' | 'reddit',...(translated?{sourceIssue:'translated' as const}:{}) };
 }
-export function validateSnapshot(value: unknown, requested: string): PageSnapshot | undefined {
+export function validateSnapshot(value: unknown, requested: string, allowTranslated=false): PageSnapshot | undefined {
   try {
     const s = value as PageSnapshot;
-    const current = validatePost(s.current);
+    const current = validatePost(s.current,allowTranslated);
     if (current.id !== requested || !['known', 'none', 'unknown', 'unlinked'].includes(s.parentState)) return;
-    const parent = s.parent ? validatePost(s.parent) : undefined;
+    const parent = s.parent ? validatePost(s.parent,allowTranslated) : undefined;
     if (s.parentState === 'known' && (!parent || parent.id === current.id)) return;
-    return { current, parent: s.parentState === 'known' ? parent : undefined, parentState: s.parentState, ...(typeof s.replyKnown==='boolean'?{replyKnown:s.replyKnown}:{}) };
+    const root=s.root?validatePost(s.root,allowTranslated):undefined;
+    if(root&&(s.parentState!=='known'||root.id===current.id||root.origin!==current.origin||new URL(root.url).origin!==new URL(current.url).origin||!Number.isInteger(s.rootDepth)||s.rootDepth!<1||s.rootDepth!>MAX_ANCESTORS||(s.rootDepth===1&&root.id!==parent?.id)))return;
+    return { current, parent: s.parentState === 'known' ? parent : undefined, parentState: s.parentState, ...(typeof s.replyKnown==='boolean'?{replyKnown:s.replyKnown}:{}),...(root?{root,rootDepth:s.rootDepth}:{}) };
   } catch { return; }
 }
 export function applyManual(bundle: ContextBundle, values?: Partial<Record<ContextRole, string>>): ContextBundle {
@@ -53,6 +57,7 @@ export function applyManual(bundle: ContextBundle, values?: Partial<Record<Conte
   return next;
 }
 export function assertInputSize(bundle: ContextBundle): void {
+  if(bundle.posts.some(p=>p.sourceIssue))throw new UserError('original-text','没有读到原文。请显示原文后重试，不能用译文替代原文。');
   if (bundle.posts.reduce((size, post) => size + post.text.length, 0) > INPUT_LIMIT) {
     throw new UserError('input-limit', '上下文超过 12,000 字符。请在「手动补充」中提供较短的相关文字，再分析。');
   }
@@ -74,6 +79,21 @@ export async function resolveContext(current: Post, initial: PageSnapshot | unde
   const linked = composeSignals([signal, timed.signal]);
   const scoped = linked.signal;
   try {
+    // Restore text without discarding relationships already established in the
+    // user's detail page. A collector may initially render only its focal post.
+    if(snapshot){
+      const restored=new Map<string,Post>();
+      const visibleRoot=snapshot.rootDepth&&snapshot.rootDepth<=(options.max??MAX_ANCESTORS)?snapshot.root:undefined;
+      for(const post of [snapshot.current,snapshot.parent,visibleRoot])if(post?.sourceIssue&&!restored.has(post.id)){
+        const fresh=await read(post.url,scoped);
+        if(fresh.current.id!==post.id||fresh.current.sourceIssue)throw new UserError('original-text','没有读到原文。请显示原文后重试。');
+        const original={...fresh.current,hasMedia:fresh.current.hasMedia||post.hasMedia};
+        restored.set(post.id,original);
+        if(post.id===current.id)selected=original;
+        if(post.id===snapshot.parent?.id)parent=original;
+      }
+      snapshot={...snapshot,current:restored.get(snapshot.current.id)??snapshot.current,...(snapshot.parent?{parent:restored.get(snapshot.parent.id)??snapshot.parent}:{}),...(snapshot.root?{root:restored.get(snapshot.root.id)??snapshot.root}:{})};
+    }
     for (let depth = 0; depth <= (options.max ?? MAX_ANCESTORS); depth++) {
       throwIfAborted(scoped);
       if (visited.has(cursor.id)) { reason = '父链出现循环，未能确认原帖。'; break; }
@@ -91,6 +111,10 @@ export async function resolveContext(current: Post, initial: PageSnapshot | unde
       }
       if (snapshot.parentState !== 'known' || !snapshot.parent) { reason = '页面没有足够信息确认父链。';relationshipUnknown=depth===0&&!snapshot.replyKnown; break; }
       if (depth === 0) parent = snapshot.parent;
+      if(snapshot.root&&snapshot.rootDepth&&depth+snapshot.rootDepth<=(options.max??MAX_ANCESTORS)){
+        root=snapshot.root;
+        break;
+      }
       if (depth === (options.max ?? MAX_ANCESTORS) || Date.now() >= deadline) { reason = '已达到补齐上限，未能确认原帖。'; break; }
       cursor = snapshot.parent;
       snapshot = undefined;
@@ -99,6 +123,7 @@ export async function resolveContext(current: Post, initial: PageSnapshot | unde
     if (signal.aborted) throw error;
     reason = '补齐未完成，可能是页面未加载、内容不可见或网络超时。';
   } finally { clearTimeout(timer); linked.dispose(); }
+  if(selected.sourceIssue)throw new UserError('original-text','没有读到原文。请显示原文后重试，不能用译文替代原文。');
   const bundle=bundleOf(selected,parent,root);if(relationshipUnknown)bundle.contextIssue='unconfirmed-relation';
   return { bundle, reason };
 }

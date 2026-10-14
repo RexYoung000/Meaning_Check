@@ -25,9 +25,20 @@ export function startReader(ctx:ContentScriptContext,selectionOnly=false):void {
   const token=new URL(location.href).searchParams.get(COLLECTOR_PARAM);
   if(token&&!selectionOnly){
     const expanded=new Map<string,number>();
+    const originals=new WeakMap<HTMLElement,number>();
     const listener=(message:any,sender:Browser.runtime.MessageSender,sendResponse:(value?:unknown)=>void)=>{
       if(sender.id!==browser.runtime.id||sender.tab||message?.type!=='collect-snapshot'||message.token!==token)return;
       const target=threadRef(message.url??'');if(!target||threadRef(location.href)?.id!==target.id)return;
+      if(location.hostname==='x.com'){
+        let restoring=false;
+        for(const article of document.querySelectorAll(x.ARTICLE_SELECTOR)){
+          const toggle=x.originalToggle(article);if(!toggle)continue;
+          const attempted=originals.get(toggle);
+          if(attempted===undefined){originals.set(toggle,Date.now());toggle.click();}
+          restoring=true;
+        }
+        if(restoring)return;
+      }
       const article=[...document.querySelectorAll(selector)].find(a=>adapter.readPost(a)?.id===target.id);
       const more=location.hostname==='x.com'&&article?x.showMoreElement(article):undefined;
       if(more&&!more.hasAttribute('href')){
@@ -99,7 +110,7 @@ export function startReader(ctx:ContentScriptContext,selectionOnly=false):void {
         // Refresh only the already-selected sources; never override a manual edit.
         if(job.bundle&&!job.selection){
           const visible=[...document.querySelectorAll(selector)].map(el=>adapter.readPost(el)).filter((p):p is Post=>!!p);
-          job.bundle={...job.bundle,posts:job.bundle.posts.map(p=>p.origin==='manual'?p:visible.find(latest=>latest.id===p.id)??p)};
+          job.bundle={...job.bundle,posts:job.bundle.posts.map(p=>p.origin==='manual'?p:visible.find(latest=>latest.id===p.id&&!latest.sourceIssue)??p)};
           const fresh=visible.find(p=>p.id===job.post.id);if(fresh)job.post=fresh;
         }
         return {type:'analyze',bundle:job.bundle,manual};
@@ -111,7 +122,7 @@ export function startReader(ctx:ContentScriptContext,selectionOnly=false):void {
   };
   const attach=(article:HTMLElement)=>{
     const existing=entries.get(article);if(existing?.isConnected)return;if(existing)entries.delete(article);if(!article.isConnected)return;
-    if(!adapter.readPost(article))return;const text=adapter.textElement(article);if(!text)return;
+    if(!adapter.readPost(article))return;const text=location.hostname==='x.com'?x.entryAnchor(article):adapter.textElement(article);if(!text)return;
     const host=node('meaning-check-entry');host.dataset.mcOwned='true';host.dataset.theme=darkTheme()?'dark':'light';
     const root=host.attachShadow({mode:'open'}),row=node('div',undefined,'entry-row');
     const trigger=button(t(lang(),'check'),()=>start(article,trigger),'entry-button');trigger.prepend(icon());
@@ -123,6 +134,11 @@ export function startReader(ctx:ContentScriptContext,selectionOnly=false):void {
   const scan=()=>{
     if(!allowed()){for(const host of entries.values())host.remove();entries.clear();selectionHost?.remove();selectionHost=undefined;closeAll();return;}
     if(!selectionOnly)for(const article of document.querySelectorAll<HTMLElement>(selector))attach(article);
+    if(selectionHost){
+      selectionHost.dataset.theme=darkTheme()?'dark':'light';
+      const trigger=selectionHost.shadowRoot?.querySelector('button');
+      if(trigger?.lastChild?.nodeType===Node.TEXT_NODE)trigger.lastChild.textContent=t(lang(),'check');
+    }
     for(const [article,host]of entries){
       if(!article.isConnected){host.remove();entries.delete(article);}
       else{

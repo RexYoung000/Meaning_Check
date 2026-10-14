@@ -11,9 +11,41 @@ describe('现代 X 与经典 X 正文',()=>{
  it('引用帖不能冒充主帖身份和正文',()=>{document.body.innerHTML='<article data-testid="tweet" tabindex="-1"><div data-testid="tweetText">main text</div><div data-testid="quoteTweet"><a href="/quote/status/8"><time>time</time></a><div data-testid="tweetText">quoted text</div></div><a href="/person/status/3"><time>main time</time></a></article>';expect(readPost(document.querySelector('article')!)).toMatchObject({id:'3',text:'main text'});});
  it('emoji img alt 被保留，媒体不被当文字解析',()=>{document.body.innerHTML='<main>'+article('3','nice <img alt="😂" src="emoji.svg"> try','reply',true).replace('</article>','<div data-testid="tweetPhoto"></div></article>')+'</main>';expect(readPost(document.querySelector('article')!)).toMatchObject({text:'nice 😂 try',hasMedia:true});});
  it('已有沉浸式翻译译文不混进原文或引用依据',()=>{document.body.innerHTML='<main>'+article('3','nice try<span class="immersive-translate-target-inner">译文：漂亮的尝试</span>','reply',true)+'</main>';expect(readPost(document.querySelector('article')!)?.text).toBe('nice try');});
+ it('译文副本在原文前面且使用相同正文属性时仍读隐藏原文',()=>{
+  const translated='<div class="immersive-translate-target-wrapper"><div data-testid="tweetText" class="whitespace-pre-wrap">你也稍微动动脑子吧，拜托了</div></div>';
+  document.body.innerHTML='<main>'+article('3','Cómo crees que lo van a borrar 👀','reply',true).replace('<div class="whitespace-pre-wrap">',translated+'<div class="whitespace-pre-wrap immersive-translate-original" style="display:none">')+'</main>';
+  expect(readPost(document.querySelector('article')!)?.text).toBe('Cómo crees que lo van a borrar 👀');
+ });
+ it('原文容器中交错译文、加载文字和插件卡片只读原文字词',()=>{
+  document.body.innerHTML='<main>'+article('3','<span>Unfortunately, AI </span><span class="immersive-translate-target-inner">不幸的是，AI</span><span>already has better taste.</span><span class="immersive-translate-loading">翻译中</span><div data-mc-owned>插件结果</div>','reply',true)+'</main>';
+  expect(readPost(document.querySelector('article')!)?.text).toBe('Unfortunately, AI already has better taste.');
+ });
+ it('只剩已标记译文时明确原文不可用，不返回译文作为正文',()=>{
+  document.body.innerHTML='<main>'+article('3','<span class="immersive-translate-target-inner">译文</span>','reply',true)+'</main>';
+  expect(readPost(document.querySelector('article')!)).toMatchObject({id:'3',text:'',sourceIssue:'original-unavailable'});
+ });
+ it('X 原生翻译替换正文时只返回定位信息，绝不读取译文',()=>{
+  document.body.innerHTML='<main>'+article('3','中文译文','reply',true).replace('<div class="whitespace-pre-wrap">','<button>显示原文</button><div class="whitespace-pre-wrap">')+'</main>';
+  expect(readPost(document.querySelector('article')!)).toMatchObject({id:'3',text:'',sourceIssue:'translated'});
+ });
+ it('三层可见连线跨不同包装层仍同时识别父帖和主题帖',()=>{
+  const middle=article('2','direct parent','reply').replace('-top-3 h-8','-top-3 -bottom-3 w-0.5');
+  document.body.innerHTML='<main><div class="layout-a">'+article('1','thread topic','root')+'</div><div class="layout-b"><section>'+middle+'</section></div>'+article('3','reply','reply',true)+'</main>';
+  expect(readPageSnapshot(document,location.href)).toMatchObject({current:{id:'3'},parent:{id:'2'},root:{id:'1'},rootDepth:2,parentState:'known'});
+ });
+ it('相邻分支没有连续两端连线时不能认作主题帖',()=>{
+  document.body.innerHTML='<main>'+article('1','unrelated topic','feed')+article('2','direct parent','root').replace('top-5 -bottom-3','-top-3 -bottom-3')+article('3','reply','reply',true)+'</main>';
+  const snapshot=readPageSnapshot(document,location.href);expect(snapshot?.parent?.id).toBe('2');expect(snapshot?.root).toBeUndefined();
+ });
  it('祖先仍在加载时不能把初始焦点帖当成原帖',()=>{document.body.innerHTML='<main>'+article('3','reply','feed',true)+'<div>正在加载帖子</div></main>';expect(readPageSnapshot(document,location.href)).toBeUndefined();});
  it('主帖没有父线时可确认原帖',()=>{document.body.innerHTML='<main>'+article('3','root text','feed',true)+'</main>';expect(readPageSnapshot(document,location.href)?.parentState).toBe('none');});
  it('经典详情识别时间链接和直接祖先，忽略引用',()=>{document.body.innerHTML='<div data-testid="primaryColumn"><div data-testid="cellInnerDiv"><article data-testid="tweet"><a href="/person/status/2"><time>time</time></a><div data-testid="tweetText">parent</div></article></div><div data-testid="cellInnerDiv"><article data-testid="tweet" tabindex="-1"><a href="/person/status/3"><time>time</time></a><div data-testid="tweetText">reply</div></article></div></div>';expect(readPageSnapshot(document,location.href)?.parent?.id).toBe('2');});
+ it('经典原生列表零偏移的连续三层确认主题帖，译文只保留角色定位',()=>{
+  const cell=(id:string,y:number)=>'<div data-testid="cellInnerDiv" style="transform:translateY('+y+'px)"><article data-testid="tweet"><a href="/person/status/'+id+'"><time>time</time></a><button>显示原文</button><div data-testid="tweetText">译文</div></article></div>';
+  document.body.innerHTML='<main data-testid="primaryColumn">'+cell('1',0)+cell('2',100)+cell('3',200)+'</main>';
+  expect(readPageSnapshot(document,location.href)).toMatchObject({current:{id:'3',text:'',sourceIssue:'translated'},parent:{id:'2'},root:{id:'1'},rootDepth:2});
+  (document.querySelector('[data-testid="cellInnerDiv"]') as HTMLElement).style.transform='translateY(100px)';expect(readPageSnapshot(document,location.href)?.root).toBeUndefined();
+ });
  it('详情地址不匹配时不复用旧页面上下文',()=>{document.body.innerHTML=article('3','reply','reply',true);expect(readPageSnapshot(document,'https://x.com/person/status/4')).toBeUndefined();});
 });
 

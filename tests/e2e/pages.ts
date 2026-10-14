@@ -30,7 +30,9 @@ export async function mockNetwork(context:BrowserContext,state:NetworkState) {
     const url=new URL(route.request().url());
     if(route.request().resourceType()!=='document') { await route.abort();return; }
     if(url.searchParams.has('mc-collector')) {state.collectorUrls.push(url.href);if(state.holdContext) await state.holdContext;}
-    await route.fulfill({contentType:'text/html',body:html(url.pathname.split('/').at(-1)!)}).catch(()=>{});
+    let body=html(url.pathname.split('/').at(-1)!);
+    if(state.holdContext&&!url.searchParams.has('mc-collector'))body=body.replace('top-5 -bottom-3','ancestor-not-loaded');
+    await route.fulfill({contentType:'text/html',body}).catch(()=>{});
   });
 }
 export async function configure(context:BrowserContext,extensionId:string):Promise<Page> {
@@ -44,5 +46,5 @@ export async function configure(context:BrowserContext,extensionId:string):Promi
 export async function entry(page:Page,id='3') {
   const article=page.locator('article').filter({has:page.locator('a[href="/person/status/'+id+'"]')});
   await article.hover();
-  return article.getByRole('button',{name:'帮我确认意思',exact:true});
+  return article.getByRole('button',{name:'帮我意图识别',exact:true});
 }

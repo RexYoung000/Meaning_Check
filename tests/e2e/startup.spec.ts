@@ -10,8 +10,8 @@ test('真实类型 SVG 图标的时间线卡片立即加载，正常得到结果
  const state:NetworkState={requests:[],collectorUrls:[],reply:interpretation,holdApi:new Promise<void>(r=>release=r)};
  const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));
  await mockNetwork(context,state);await context.route('https://x.com/home',route=>route.fulfill({contentType:'text/html',body:timeline}));await configure(context,extensionId);await page.goto('https://x.com/home');
- await (await entry(page,'21')).click();const card=page.getByRole('region',{name:'确认这条内容',exact:true});
- await expect(card.getByText('正在分析意思…',{exact:true})).toBeVisible();await expect(card.locator('.spinner')).toBeVisible();await expect.poll(()=>card.locator('.loading-time').textContent()).toMatch(/已执行 [1-9]\d* 秒/);
+ await (await entry(page,'21')).click();const card=page.getByRole('region',{name:'这句话想表达什么',exact:true});
+ await expect(card.getByText('正在识别意图…',{exact:true})).toBeVisible();await expect(card.locator('.spinner')).toBeVisible();await expect.poll(()=>card.locator('.loading-time').textContent()).toMatch(/已等 [1-9]\d* 秒/);
  await expect.poll(()=>state.requests.length).toBe(1);expect(state.collectorUrls).toHaveLength(0);expect(errors).toEqual([]);
  await page.screenshot({path:'documentation/evidence/timeline-loading.png'});release();await expect(card.getByText(interpretation.summary,{exact:true})).toBeVisible();
  await (await entry(page,'21')).click();await expect(card.getByRole('button',{name:'展开',exact:true})).toBeVisible();await (await entry(page,'21')).click();await expect(card.getByText(interpretation.summary,{exact:true})).toBeVisible();expect(state.requests).toHaveLength(1);
@@ -34,8 +34,8 @@ test('页面读取异常显示可重试错误且未调用模型，主动重试�
    };
   }});
  });
- await trigger.click();const card=page.getByRole('region',{name:'确认这条内容',exact:true});
+ await trigger.click();const card=page.getByRole('region',{name:'这句话想表达什么',exact:true});
  await expect(card.getByText('页面文字或帖子关系读取中断，请点击重试。',{exact:true})).toBeVisible();await expect(card.getByText('尚未调用模型。请先处理上面的文字或配置问题。',{exact:true})).toBeVisible();await expect(card.locator('.spinner')).toHaveCount(0);expect(state.requests).toHaveLength(0);expect(errors).toEqual([]);
- await page.screenshot({path:'documentation/evidence/page-read-error.png'});await card.getByRole('button',{name:'重试补齐',exact:true}).click();await expect(card.getByText('正在分析意思…',{exact:true})).toBeVisible();await expect(card.locator('.spinner')).toBeVisible();await expect.poll(()=>state.requests.length).toBe(1);
+ await page.screenshot({path:'documentation/evidence/page-read-error.png'});await card.getByRole('button',{name:'重试补齐',exact:true}).click();await expect(card.getByText('正在识别意图…',{exact:true})).toBeVisible();await expect(card.locator('.spinner')).toBeVisible();await expect.poll(()=>state.requests.length).toBe(1);
  release();await expect(card.getByText(interpretation.summary,{exact:true})).toBeVisible();expect(errors).toEqual([]);
 });

@@ -1,6 +1,6 @@
 # Meaning Check
 
-Understand the meaning, tone and evidence behind public posts and replies. Bring your own model API and click **Check meaning**. The interpretation opens directly under the source text.
+Understand the meaning, tone and evidence behind public posts and replies. Bring your own model API and click **Identify intent**. The interpretation opens directly under the source text.
 
 **Open source · MIT · Your API (BYOK) · Chinese / English interface**
 
@@ -9,9 +9,9 @@ Understand the meaning, tone and evidence behind public posts and replies. Bring
 ## What it does
 
 - Interpret standalone posts directly. For replies, use the current text, its direct parent and the thread root, deduplicating shared sources.
-- Show a main reading first, followed by tone, communicative function and traceable original quotes. Disagreement does not automatically mean hostility; no invented confidence percentages.
+- Show a concrete reading in short everyday sentences, then brief tone and communicative function. Expand original evidence and background when needed. Disagreement does not automatically mean hostility; no invented confidence percentages.
 - Open separate inline cards for several posts. Up to two tasks run at once; others queue. Scrolling keeps cards open, collapsing keeps tasks running, and closing cancels only that task.
-- Show stages, motion, elapsed time and limits for initial requests, second confirmations, manual analysis and retries.
+- Show only the current stage, motion, elapsed time / limit and cancel while loading, including second confirmations and manual submissions.
 - Use DeepSeek, Grok / xAI, GPT / OpenAI, Claude / Anthropic, Gemini, GLM, Qwen, Kimi, MiniMax or custom compatible APIs.
 - Enable X and Reddit by default, manage origins and paths, and use selected text on other allowed sites. Set interface and analysis languages independently.
 
@@ -21,9 +21,9 @@ This actual-extension screenshot uses mocked pages and model output to illustrat
 
 ## Install and start
 
-The current version is **0.3.2 POC**. Build it from source; there is no store release or published Release installer yet.
+The current version is **0.3.3 POC**. Build it from source; there is no store release or published Release installer yet.
 
-0.3.2 fixes cards that showed only a header after clicking a timeline post: native icons no longer interrupt relationship reading, preparation appears immediately, and page-read failures offer a clear error and explicit retry.
+0.3.3 simplifies result cards and loading text and renames the action to Identify intent. On translated X pages it reads retained original text. Continuous reply chains now retain both the direct reply target and the thread starter across different layout wrappers.
 
 Requires Node.js 24 and pnpm 10:
 
@@ -38,9 +38,9 @@ pnpm build
 2. Open the toolbar icon → **Extension settings**, or click **Extension settings** beside a post. The browser Details page manages the extension; **Extension options** there opens the same settings page.
 3. In **Model connections**, choose a provider and model, enter your API key, and save. Saving does not request inference. Testing a connection makes one model request and may incur API charges.
 4. Set interface and analysis languages in **Languages**, and manage enabled origins and paths in **Websites**.
-5. Refresh X / Reddit and click **Check meaning**. On custom sites, select text, confirm optional background, then analyze.
+5. Refresh X / Reddit and click **Identify intent**. On custom sites, select text, confirm optional background, then analyze.
 
-For an existing install, update the build, reload the extension, confirm 0.3.2, and refresh the page. If the browser loaded a separately extracted copy, update that copy first; editing the source directory alone will not update it. Preserve the extension path / ID so local settings survive.
+For an existing install, update the build, reload the extension, confirm 0.3.3, and refresh the page. If the browser loaded a separately extracted copy, update that copy first; editing the source directory alone will not update it. Preserve the extension path / ID so local settings survive.
 
 ## How missing context is determined
 
@@ -60,6 +60,10 @@ Provider names, complete model names, API IDs and official sources are listed in
 
 Keys stay in protected local extension storage and cannot be read by web pages. Only an explicit click sends selected relevant text to the configured provider. Changing an endpoint requires a new key. No business server, account system, analysis history, reply generation or sending; no automatic retry of paid requests.
 
+Analysis defaults to the full browser locale (usually based on device language). Choose Japanese, Spanish or another locale in Extension settings → Languages → Analysis language. Interface and button labels currently support Chinese / English independently; source quotes are never translated.
+
+On translated X pages, recognized translation targets are excluded and retained original text is used. When native X translation replaces the text, the extension restores originals in its own temporary tab while keeping your page translated. Confirmed reply-target and thread-starter relationships are retained. If only a marked translation remains, show the original and retry; it is not sent as original input. Other translation tools and changing page structures need further live testing.
+
 Text only: images / GIFs are not read. Quotes must match input; invalid evidence and incomplete output are rejected. This explains expression, not the truth of news or claims. Page structure, login state and loading behavior can still affect parent-chain collection.
 
 ## Develop and verify
@@ -73,7 +77,7 @@ pnpm test:e2e
 pnpm check:package
 ```
 
-Use `pnpm dev` for development and `pnpm zip` for `.output/meaning-check-0.3.2-chrome.zip`. Edit `public/icon.svg` and run `pnpm icons` to regenerate PNGs. Builds include root LICENSE automatically.
+Use `pnpm dev` for development and `pnpm zip` for `.output/meaning-check-0.3.3-chrome.zip`. Edit `public/icon.svg` and run `pnpm icons` to regenerate PNGs. Builds include root LICENSE automatically.
 
 Tests use disposable isolated browser profiles and mock APIs, not personal browser data. Passing automation does not prove live provider quality. Actual results and remaining acceptance items are recorded in [verification notes](documentation/tests.md).
 

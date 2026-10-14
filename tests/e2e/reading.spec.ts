@@ -1,0 +1,67 @@
+import {test,expect} from './fixtures';
+import {configure,entry,html,item,mockNetwork,type NetworkState} from './pages';
+import {result} from '../fixtures/posts';
+
+const original='Cómo crees que lo van a borrar a 2 meses de su estreno, también tu piénsale tantito no mames';
+const reading={...result,summary:'他觉得“上映两个月就删掉”不合理，还带着不耐烦让对方再想想。',tone:'不耐烦，有点讽刺',function:'反驳“很快会删掉”的说法',evidence:[{sourceId:'33',quote:'piénsale tantito',explanation:'让对方再想一想，结合反问可读出不耐烦。'}]};
+const layout=(text:string)=>html('1').replace(/<main>[\s\S]*<\/main>/,'<main>'+text+'</main>');
+const translated=(post:string)=>post.replace('<div class="whitespace-pre-wrap">','<div class="immersive-translate-target-wrapper"><div class="whitespace-pre-wrap" data-testid="tweetText">翻译后的中文，不应发送</div></div><div class="immersive-translate-original" style="display:none"><div class="whitespace-pre-wrap">').replace('<div class="original-actions">','</div><div class="original-actions">');
+const thread=()=>'<div>'+translated(item('31','Will this film stay available?','root'))+'</div><section><div>'+translated(item('32','They will delete it after two months.','reply').replace('-top-3 h-8','-top-3 -bottom-3 w-0.5'))+'</div></section>'+translated(item('33',original,'reply',true))+item('34','Unrelated branch','feed');
+const native=(id:string,text:string,kind:'root'|'reply',focal=false)=>item(id,'X 自动翻译后的中文',kind,focal).replace('<div class="whitespace-pre-wrap">','<button data-original="'+text+'" onclick="this.nextElementSibling.textContent=this.dataset.original;this.remove()">显示原文</button><div class="whitespace-pre-wrap">');
+const nativeThread=()=>native('31','Will this film stay available?','root')+native('32','They will delete it after two months.','reply').replace('-top-3 h-8','-top-3 -bottom-3 w-0.5')+native('33',original,'reply',true);
+const classicNative=(id:string,text:string,y:number)=>'<div data-testid="cellInnerDiv" style="transform:translateY('+y+'px)"><article data-testid="tweet"><a href="/person/status/'+id+'"><time>Today</time></a><button data-original="'+text+'" onclick="this.nextElementSibling.textContent=this.dataset.original;this.remove()">显示原文</button><div data-testid="tweetText">X 自动翻译后的中文</div></article></div>';
+
+test('经典 X 当前页三层关系不会被临时页仅显示焦点的状态改成独立帖',async({context,page,extensionId})=>{
+ const state:NetworkState={requests:[],collectorUrls:[],reply:reading};await mockNetwork(context,state);
+ const texts:Record<string,string>={'31':'Will this film stay available?','32':'They will delete it after two months.','33':original};
+ await context.route(/https:\/\/x\.com\/person\/status\/(31|32|33)/,async route=>{const url=new URL(route.request().url()),id=url.pathname.split('/').at(-1)!;const collecting=url.searchParams.has('mc-collector');if(collecting)state.collectorUrls.push(url.href);const posts=collecting?classicNative(id,texts[id]!,0):['31','32','33'].map((id,i)=>classicNative(id,texts[id]!,i*100)).join('');await route.fulfill({contentType:'text/html',body:layout(posts).replace('<main>','<main data-testid="primaryColumn">')});});
+ await configure(context,extensionId);await page.goto('https://x.com/person/status/33');await (await entry(page,'33')).click();await expect(page.getByText(reading.summary,{exact:true})).toBeVisible();const sent=JSON.parse(state.requests[0].messages[1].content);expect(sent.roles).toEqual({current:'33',parent:'32',root:'31'});expect(sent.mode).toBe('thread');expect(sent.sources.map((s:any)=>s.text)).toEqual([original,texts['32'],texts['31']]);expect(state.collectorUrls).toHaveLength(3);await expect(page.getByRole('button',{name:'显示原文',exact:true})).toHaveCount(3);await expect.poll(()=>context.pages().filter(p=>p.url().includes('mc-collector')).length).toBe(0);
+});
+
+test('X 原生自动翻译只在临时页恢复三份原文，用户页保持翻译且不发送中文译文',async({context,page,extensionId})=>{
+ const state:NetworkState={requests:[],collectorUrls:[],reply:reading};await mockNetwork(context,state);
+ await context.route('https://x.com/person/status/33*',async route=>{if(new URL(route.request().url()).searchParams.has('mc-collector'))state.collectorUrls.push(route.request().url());await route.fulfill({contentType:'text/html',body:layout(nativeThread())});});await configure(context,extensionId);await page.goto('https://x.com/person/status/33');await (await entry(page,'33')).click();await expect(page.getByText(reading.summary,{exact:true})).toBeVisible();
+ const sent=JSON.parse(state.requests[0].messages[1].content);expect(sent.roles).toEqual({current:'33',parent:'32',root:'31'});expect(sent.sources[0].text).toBe(original);expect(sent.sources.map((s:any)=>s.text)).toEqual([original,'They will delete it after two months.','Will this film stay available?']);expect(JSON.stringify(sent)).not.toContain('自动翻译后的中文');expect(state.collectorUrls).toHaveLength(1);
+ await expect(page.locator('article .whitespace-pre-wrap')).toHaveText(Array(3).fill('X 自动翻译后的中文'));await expect(page.getByRole('button',{name:'显示原文',exact:true})).toHaveCount(3);await expect.poll(()=>context.pages().filter(p=>p.url().includes('mc-collector')).length).toBe(0);
+});
+
+test('恢复原文仍未成功时可取消临时页，译文不能进入付费分析',async({context,page,extensionId})=>{
+ const state:NetworkState={requests:[],collectorUrls:[],reply:reading};await mockNetwork(context,state);
+ await context.route('https://x.com/person/status/33*',async route=>{if(new URL(route.request().url()).searchParams.has('mc-collector'))state.collectorUrls.push(route.request().url());await route.fulfill({contentType:'text/html',body:layout(nativeThread().replaceAll('this.nextElementSibling.textContent=this.dataset.original;this.remove()','void 0'))});});await configure(context,extensionId);await page.goto('https://x.com/person/status/33');await (await entry(page,'33')).click();await expect.poll(()=>state.collectorUrls.length).toBe(1);await expect(page.locator('.spinner')).toBeVisible();expect(state.requests).toHaveLength(0);await page.getByRole('button',{name:'取消这条任务',exact:true}).click();await expect.poll(()=>context.pages().filter(p=>p.url().includes('mc-collector')).length).toBe(0);expect(state.requests).toHaveLength(0);
+});
+
+test('翻译副本在前时读取三份原文，跨包装层保留主题帖，结果默认简洁可展开',async({context,page,extensionId})=>{
+ const state:NetworkState={requests:[],collectorUrls:[],reply:reading};await mockNetwork(context,state);
+ await context.route('https://x.com/person/status/33*',route=>route.fulfill({contentType:'text/html',body:layout(thread())}));await configure(context,extensionId);
+ await page.goto('https://x.com/person/status/33');await (await entry(page,'33')).click();const card=page.locator('meaning-check-card');await expect(card.getByText(reading.summary,{exact:true})).toBeVisible();
+ const sent=JSON.parse(state.requests[0].messages[1].content);expect(sent.roles).toEqual({current:'33',parent:'32',root:'31'});expect(sent.sources.map((s:any)=>s.id)).toEqual(['33','32','31']);expect(sent.sources[0].text).toBe(original);expect(JSON.stringify(sent)).not.toContain('翻译后的中文');expect(JSON.stringify(sent)).not.toContain('Unrelated branch');expect(state.collectorUrls).toHaveLength(0);
+ await expect(card.locator('blockquote')).not.toBeVisible();await expect(card.locator('.meta')).not.toBeVisible();await expect(card.getByText(reading.tone,{exact:true})).toBeVisible();
+ await card.getByText('为什么这样理解？',{exact:true}).press('Enter');await expect(card.locator('blockquote')).toHaveText('piénsale tantito');await expect(card.locator('blockquote')).toBeVisible();
+ await card.getByText('原文和背景',{exact:true}).click();await expect(card.getByRole('link',{name:'它回复的内容',exact:true})).toHaveAttribute('href','https://x.com/person/status/32');await expect(card.getByRole('link',{name:'最初的帖子',exact:true})).toHaveAttribute('href','https://x.com/person/status/31');await expect(card.locator('.source-text').first()).toHaveText(original);await expect(card.locator('.meta')).toBeVisible();expect(state.requests).toHaveLength(1);
+ await card.getByText('为什么这样理解？',{exact:true}).press('Enter');await card.getByText('原文和背景',{exact:true}).click();await page.evaluate(()=>document.documentElement.classList.add('dark'));await expect(card).toHaveAttribute('data-theme','dark');await expect(page.locator('meaning-check-entry').first()).toHaveAttribute('data-theme','dark');expect(await card.locator('.card').evaluate(el=>getComputedStyle(el).backgroundColor)).toBe('rgb(21, 32, 43)');await page.screenshot({path:'documentation/evidence/reading-compact.png'});
+});
+
+test('主题帖不在当前页时继续补齐，不能把直接回复对象当主题帖',async({context,page,extensionId})=>{
+ const state:NetworkState={requests:[],collectorUrls:[],reply:reading};await mockNetwork(context,state);
+ await context.route('https://x.com/person/status/33*',route=>route.fulfill({contentType:'text/html',body:layout(item('32','They will delete it after two months.','reply').replace('-top-3 h-8','-top-3 -bottom-3 w-0.5')+item('33',original,'reply',true))}));
+ await context.route('https://x.com/person/status/32*',async route=>{state.collectorUrls.push(route.request().url());await route.fulfill({contentType:'text/html',body:layout(item('31','Will this film stay available?','root')+item('32','They will delete it after two months.','reply',true))});});
+ await configure(context,extensionId);await page.goto('https://x.com/person/status/33');await (await entry(page,'33')).click();await expect(page.getByText(reading.summary,{exact:true})).toBeVisible();const sent=JSON.parse(state.requests[0].messages[1].content);expect(sent.roles).toEqual({current:'33',parent:'32',root:'31'});expect(sent.sources).toHaveLength(3);expect(state.collectorUrls).toHaveLength(1);await expect.poll(()=>context.pages().filter(p=>p.url().includes('mc-collector')).length).toBe(0);
+});
+
+test('只有已标记译文时给出原文错误，不调用模型，显示原文后主动重试',async({context,page,extensionId})=>{
+ const state:NetworkState={requests:[],collectorUrls:[],reply:reading};await mockNetwork(context,state);await context.route('https://x.com/home',route=>route.fulfill({contentType:'text/html',body:layout(item('33','翻译后的中文','feed').replace('class="whitespace-pre-wrap"','class="whitespace-pre-wrap immersive-translate-target-inner"'))}));await configure(context,extensionId);await page.goto('https://x.com/home');await (await entry(page,'33')).click();
+ await expect(page.getByText('没有读到原文。请显示原文后重试，不能用译文替代原文。',{exact:true})).toBeVisible();expect(state.requests).toHaveLength(0);expect(state.collectorUrls).toHaveLength(0);
+ await page.locator('.whitespace-pre-wrap').evaluate((el,text)=>{el.setAttribute('class','whitespace-pre-wrap');el.textContent=text;},original);await page.getByRole('button',{name:'重试补齐',exact:true}).click();await expect(page.getByText(reading.summary,{exact:true})).toBeVisible();expect(JSON.parse(state.requests[0].messages[1].content).sources[0].text).toBe(original);
+});
+
+test('加载只有阶段计时动效和取消，没有多余过程说明',async({context,page,extensionId})=>{
+ let release!:()=>void;const state:NetworkState={requests:[],collectorUrls:[],holdApi:new Promise<void>(r=>release=r)};await mockNetwork(context,state);await configure(context,extensionId);await page.goto('https://x.com/person/status/3');await (await entry(page)).click();const card=page.locator('meaning-check-card');await expect(card.getByText('正在识别意图…',{exact:true})).toBeVisible();await expect(card.locator('.content p')).toHaveCount(2);await expect(card.locator('.spinner')).toBeVisible();await expect.poll(()=>card.locator('.loading-time').textContent()).toMatch(/已等 [1-9]\d* 秒 · 本次上限 60 秒/);await expect(card.getByRole('button',{name:'取消这条任务',exact:true})).toBeVisible();await page.screenshot({path:'documentation/evidence/loading-minimal.png'});release();await expect(card.getByText(result.summary,{exact:true})).toBeVisible();
+});
+
+test('现有 X 与 Reddit 按钮实时随界面语言更换，输出语言可独立为西班牙语',async({context,page,extensionId})=>{
+ const state:NetworkState={requests:[],collectorUrls:[],reply:{...result,summary:'Se burla del intento con una ligera duda.',tone:'Bromista',function:'Cuestionar el intento',evidence:[{sourceId:'3',quote:'nice try',explanation:'Cuestiona el intento.'}]}};await mockNetwork(context,state);const options=await configure(context,extensionId);
+ await context.route('https://www.reddit.com/**',route=>route.fulfill({contentType:'text/html',body:'<!doctype html><shreddit-comment thingid="t1_def" parentid="t3_abc" permalink="/r/test/comments/abc/title/def/"><div slot="comment">Hahaha))) nice try</div></shreddit-comment>'}));
+ const reddit=await context.newPage();await reddit.goto('https://www.reddit.com/r/test/comments/abc/title/def/');await page.goto('https://x.com/person/status/3');await expect((await entry(page))).toBeVisible();await expect(reddit.getByRole('button',{name:'帮我意图识别',exact:true})).toBeVisible();
+ await options.getByRole('link',{name:'语言',exact:true}).click();await options.getByLabel('解读输出语言',{exact:true}).selectOption('es');await options.getByRole('button',{name:'保存',exact:true}).click();await options.getByRole('button',{name:'English',exact:true}).click();await expect(page.locator('article').nth(1).getByRole('button',{name:'Identify intent',exact:true})).toBeVisible();await expect(reddit.getByRole('button',{name:'Identify intent',exact:true})).toBeVisible();expect(state.requests).toHaveLength(0);
+ await page.locator('article').nth(1).getByRole('button',{name:'Identify intent',exact:true}).click();await expect(page.getByText(state.reply!.summary as string,{exact:true})).toBeVisible();expect(state.requests[0].messages[0].content).toContain('locale es');await page.getByText('Why this reading?',{exact:true}).click();await expect(page.locator('blockquote')).toHaveText('nice try');
+});

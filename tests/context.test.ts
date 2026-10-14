@@ -22,6 +22,30 @@ describe('上下文范围与补齐', () => {
     const r = await resolveContext(reply, { current: reply, parent, parentState:'known' }, async () => ({ current: parent, parentState:'unknown' }), new AbortController().signal);
     expect(r.bundle.roles.parent).toBe('2'); expect(r.bundle.roles.root).toBeUndefined(); expect(r.bundle.missing).toEqual(['root']);
   });
+  it('已确认的可见主题帖和直接父帖一次保留，只发送三个角色',async()=>{
+    const read=vi.fn();const r=await resolveContext(reply,{current:reply,parent,root,rootDepth:2,parentState:'known'},read,new AbortController().signal);
+    expect(r.bundle.roles).toEqual({current:'3',parent:'2',root:'1'});expect(r.bundle.posts.map(p=>p.id)).toEqual(['3','2','1']);expect(r.bundle.missing).toEqual([]);expect(read).not.toHaveBeenCalled();
+  });
+  it('跳到主题帖不能绕过追溯层数上限',async()=>{
+    const read=vi.fn();const r=await resolveContext(reply,{current:reply,parent,root,rootDepth:2,parentState:'known'},read,new AbortController().signal,{max:0});
+    expect(r.bundle.roles.root).toBeUndefined();expect(r.bundle.missing).toEqual(['root']);expect(read).not.toHaveBeenCalled();
+  });
+  it('快照拒绝没有父关系、超深或身份冲突的主题帖',()=>{
+    const s={current:reply,parent,root,rootDepth:2,parentState:'known' as const};expect(validateSnapshot(s,'3')?.root?.id).toBe('1');
+    expect(validateSnapshot({...s,parentState:'unknown'},'3')).toBeUndefined();expect(validateSnapshot({...s,rootDepth:11},'3')).toBeUndefined();expect(validateSnapshot({...s,rootDepth:1},'3')).toBeUndefined();
+    expect(()=>validatePost({...reply,text:'',sourceIssue:'original-unavailable'})).toThrow('原文');
+  });
+  it('译文状态只允许空文字定位，不能进入快照、材料或部分分析',async()=>{
+    const translated={...reply,text:'',sourceIssue:'translated' as const};expect(validatePost(translated,true)).toEqual(translated);
+    expect(()=>validatePost({...translated,text:'译文'},true)).toThrow('原文');expect(()=>validatePost(translated)).toThrow('原文');expect(validateSnapshot({current:translated,parentState:'none'},'3')).toBeUndefined();expect(()=>assertInputSize(bundleOf(translated))).toThrow('原文');
+    await expect(resolveContext(translated,undefined,async()=>{throw new Error('restore failed');},new AbortController().signal)).rejects.toMatchObject({code:'original-text'});
+  });
+  it('恢复三个原文时保留用户页父链，不让临时页焦点独立状态覆盖关系',async()=>{
+    const located=(p:typeof reply)=>({...p,text:'',sourceIssue:'translated' as const});
+    const initial=validateSnapshot({current:located(reply),parent:located(parent),root:{...located(root),hasMedia:true},rootDepth:2,parentState:'known'},'3',true);
+    expect(initial).toBeTruthy();const read=vi.fn(async(url:string)=>({current:[reply,parent,root].find(p=>p.url===url)!,parentState:'none' as const}));
+    const r=await resolveContext(located(reply),initial,read,new AbortController().signal);expect(r.bundle.mode).toBeUndefined();expect(r.bundle.roles).toEqual({current:'3',parent:'2',root:'1'});expect(r.bundle.posts.map(p=>p.text)).toEqual([reply.text,parent.text,root.text]);expect(r.bundle.posts.find(p=>p.id==='1')?.hasMedia).toBe(true);expect(r.bundle.missing).toEqual([]);expect(read).toHaveBeenCalledTimes(3);
+  });
   it('追溯有界，达到上限保留父帖并提示缺根', async () => {
     const read = vi.fn(async () => ({ current: post('4'), parent: post('3'), parentState:'known' as const }));
     const r = await resolveContext(post('4'), undefined, read, new AbortController().signal, {max:0});

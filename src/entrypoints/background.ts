@@ -19,9 +19,13 @@ export default defineBackground(()=>{
   async function syncScripts():Promise<void> {
     const config=await publicConfig();const all=await browser.scripting.getRegisteredContentScripts();
     const existing=all.filter(s=>s.id.startsWith('mc-site-'));
-    if(existing.length)await browser.scripting.unregisterContentScripts({ids:existing.map(s=>s.id)});
-    const sites=config.preferences.enabled?config.preferences.sites.filter(s=>s.enabled&&s.adapter==='selection'):[];
-    for(const site of sites)if(await browser.permissions.contains({origins:[site.origin+'/*']})) {
+    const candidates=config.preferences.enabled?config.preferences.sites.filter(s=>s.enabled&&s.adapter==='selection'):[];
+    const sites:typeof candidates=[];
+    for(const site of candidates)if(await browser.permissions.contains({origins:[site.origin+'/*']}))sites.push(site);
+    const retained=new Set(existing.filter(s=>sites.some(site=>s.id==='mc-site-'+site.id&&s.matches?.length===1&&s.matches[0]===site.origin+'/*'&&s.js?.length===1&&s.js[0]==='content-scripts/selection.js'&&s.runAt==='document_idle')).map(s=>s.id));
+    const removed=existing.filter(s=>!retained.has(s.id));
+    if(removed.length)await browser.scripting.unregisterContentScripts({ids:removed.map(s=>s.id)});
+    for(const site of sites)if(!retained.has('mc-site-'+site.id)) {
       await browser.scripting.registerContentScripts([{id:'mc-site-'+site.id,matches:[site.origin+'/*'],js:['content-scripts/selection.js'],runAt:'document_idle',persistAcrossSessions:true}]);
       const tabs=await browser.tabs.query({url:site.origin+'/*'});
       for(const tab of tabs)if(tab.id!==undefined)try {await browser.scripting.executeScript({target:{tabId:tab.id},files:['/content-scripts/selection.js']});}catch{}
@@ -116,8 +120,8 @@ export default defineBackground(()=>{
         startedAt=Date.now();emit({type:'phase',phase:'preparing',startedAt});
         timer=setTimeout(()=>{timedOut=true;operation.abort();void collector.close().catch(()=>{});},ANALYSIS_TIMEOUT_MS);
         if(raw?.type==='start'){
-          current=validatePost(raw.post);if(new URL(current.url).origin!==new URL(site.origin).origin)throw new UserError('bad-input','帖子来源不对应。');
-          initial=validateSnapshot(raw.snapshot,current.id);if(initial?.parent&&new URL(initial.parent.url).origin!==new URL(current.url).origin)initial=undefined;
+          current=validatePost(raw.post,true);if(new URL(current.url).origin!==new URL(site.origin).origin)throw new UserError('bad-input','帖子来源不对应。');
+          initial=validateSnapshot(raw.snapshot,current.id,true);if(initial?.parent&&new URL(initial.parent.url).origin!==new URL(current.url).origin)initial=undefined;
           if(current.truncated||initial?.parentState==='unknown')initial=undefined;return runContext();
         }else if(raw?.type==='retry-context'){initial=undefined;return runContext();}
         else if(raw?.type==='analyze'){

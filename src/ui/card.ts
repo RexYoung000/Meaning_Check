@@ -58,7 +58,7 @@ export class ResultCard {
   private stopClock():void{clearInterval(this.clock);this.clock=undefined;}
   private reset(): void { this.stopClock();this.content.replaceChildren(); }
   private setCaption(text:string):void{this.caption=text;this.compact.textContent=this.collapsed?text:'';}
-  private loading(title:string,help:string,clockKey:'queueWait'|'contextWait'|'analysisWait',startedAt:number):void {
+  private loading(title:string,clockKey:'queueWait'|'contextWait'|'analysisWait',startedAt:number):void {
     this.reset();
     this.setCaption(title);
     const status = node('p', undefined, 'progress');
@@ -68,31 +68,35 @@ export class ResultCard {
     const time=node('p',undefined,'loading-time muted');
     const tick=()=>time.textContent=this.copy(clockKey,Math.max(0,Math.floor((Date.now()-startedAt)/1000)));
     tick();this.clock=setInterval(tick,1000);
-    this.content.append(status,node('p',help,'muted'),time);
-    if(clockKey!=='queueWait')this.content.append(node('p',this.copy('waitLimitHelp'),'muted'));
+    this.content.append(status,time);
     this.content.append(button(this.copy('cancelTask'),()=>this.actions.close(),'button secondary'));
     this.position();
   }
   phase(phase: 'preparing' | 'context' | 'analysis',startedAt=Date.now()): void {
-    this.loading(this.copy(phase==='preparing'?'preparingPhase':phase==='context'?'contextPhase':'analysisPhase'),this.copy(phase==='preparing'?'preparingHelp':phase==='context'?'contextHelp':'analysisHelp'),phase==='context'?'contextWait':'analysisWait',startedAt);
+    this.loading(this.copy(phase==='preparing'?'preparingPhase':phase==='context'?'contextPhase':'analysisPhase'),phase==='context'?'contextWait':'analysisWait',startedAt);
   }
-  queued(position:number,queuedAt:number):void{this.loading(this.copy('queued',position),this.copy('queueHelp'),'queueWait',queuedAt);}
+  queued(position:number,queuedAt:number):void{this.loading(this.copy('queued',position),'queueWait',queuedAt);}
   private coverage(bundle: ContextBundle,beforeAnalysis=false): void {
-    if(bundle.mode==='post')this.content.append(node('p',this.copy(bundle.relation==='standalone'?'postScope':'unlinkedScope'),'notice'));
     if (bundle.missing.length) this.content.append(node('p', this.copy(beforeAnalysis?'missingBefore':'missing',bundle.missing.map(r => this.role(r, bundle)).join(this.language==='zh'?'、':' / ')), 'notice'));
     if (bundle.posts.some(p => p.hasMedia)) this.content.append(node('p', this.copy('media'), 'notice'));
     for (const warning of new Set(bundle.warnings)) this.content.append(node('p', this.copy('truncated'), 'notice'));
   }
-  private sources(bundle: ContextBundle): void {
+  private sourceLabel(id:string,bundle:ContextBundle):string {
+    const role=id===bundle.roles.current?'current':id===bundle.roles.root?'root':'parent';
+    return this.role(role,bundle);
+  }
+  private sources(bundle: ContextBundle,response?:AnalysisResponse): void {
     const details = node('details', undefined, 'sources');
     details.append(node('summary', this.copy('sources')));
+    if(bundle.mode==='post')details.append(node('p',this.copy(bundle.relation==='standalone'?'postScope':'unlinkedScope'),'muted'));
     for (const post of bundle.posts) {
       const section = node('div', undefined, 'source');
-      const labels = (Object.entries(bundle.roles) as [ContextRole, string][]).filter(([, id]) => id === post.id).map(([role]) => this.role(role, bundle)).join(' / ');
+      const labels = this.sourceLabel(post.id,bundle);
       const label = post.origin === 'manual' ? labels + ' · ' + this.copy('manualSource') : labels;
       section.append(post.url ? safeLink(label, post.url) : node('strong', label), node('p', post.text, 'source-text'));
       details.append(section);
     }
+    if(response)details.append(node('p',this.copy('elapsed',(response.elapsedMs / 1000).toFixed(1))+(response.usage?' · '+this.copy('usage',response.usage.totalTokens):'')+(response.model?' · '+response.model:'')+(response.language?' · '+response.language:''),'meta'));
     this.content.append(details);
   }
   context(bundle: ContextBundle, reason?: string): void {
@@ -122,20 +126,19 @@ export class ResultCard {
       traits.append(node('dt', label), node('dd', value));
     }
     this.content.append(traits);
-    const evidenceTitle = node('h3', this.copy('evidence'));
-    this.content.append(evidenceTitle);
+    const evidenceDetails = node('details',undefined,'evidence-details');
+    evidenceDetails.append(node('summary',this.copy('evidence')));
     for (const evidence of response.result.evidence) {
       const source = bundle.posts.find(p => p.id === evidence.sourceId)!;
-      const labels = (Object.entries(bundle.roles) as [ContextRole, string][]).filter(([, id]) => id === source.id).map(([role]) => this.role(role, bundle)).join(' / ');
+      const labels = this.sourceLabel(source.id,bundle);
       const block = node('div', undefined, 'evidence');
       block.append(node('blockquote', evidence.quote), source.url ? safeLink(labels, source.url) : node('span', labels + ' · ' + this.copy('manualSource'), 'muted'), node('p', evidence.explanation));
-      this.content.append(block);
+      evidenceDetails.append(block);
     }
     if (response.result.uncertainty) this.content.append(node('p', response.result.uncertainty, 'uncertainty'));
     this.coverage(bundle);
-    this.sources(bundle);
-    const meta = node('p', this.copy('elapsed',(response.elapsedMs / 1000).toFixed(1)) + (response.usage ? ' · ' + this.copy('usage',response.usage.totalTokens) : '') + (response.model ? ' · ' + response.model : '') + (response.language ? ' · ' + response.language : ''), 'meta');
-    this.content.append(meta);
+    this.content.append(evidenceDetails);
+    this.sources(bundle,response);
     if (bundle.mode==='selection' || bundle.mode==='post' || bundle.missing.length || response.result.status === 'needs_context') this.manual(bundle);
     this.position();
   }
@@ -144,7 +147,7 @@ export class ResultCard {
     this.reset();
     this.setCaption(errorText(this.language,code,message));
     this.content.append(node('p', this.copy('noResult'), 'summary-text'), node('p', errorText(this.language,code,message), 'error-message'));
-    if(['input-limit','truncated-input','bad-input','page-read','missing-key','disabled'].includes(code))this.content.append(node('p',this.copy('notSubmitted'),'muted'));
+    if(['input-limit','truncated-input','bad-input','page-read','original-text','missing-key','disabled'].includes(code))this.content.append(node('p',this.copy('notSubmitted'),'muted'));
     if (code === 'missing-key') this.content.append(button(this.copy('openSettings'), () => this.actions.settings(), 'button primary'));
     else if (this.bundle && code !== 'original-post') {
       if (code !== 'input-limit' && code !== 'truncated-input') this.content.append(button(this.copy('reanalyze'), () => this.actions.analyze(), 'button primary'));
