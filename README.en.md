@@ -15,9 +15,13 @@ Understand the meaning, tone and evidence behind public posts and replies. Bring
 - Use DeepSeek, Grok / xAI, GPT / OpenAI, Claude / Anthropic, Gemini, GLM, Qwen, Kimi, MiniMax or custom compatible APIs.
 - Enable X and Reddit by default, manage origins and paths, and use selected text on other allowed sites. Set interface and analysis languages independently.
 
-![An interpretation below its source](documentation/evidence/result-light.png)
+## In use
 
-This actual-extension screenshot uses mocked pages and model output to illustrate interaction. It is not evidence of live model quality.
+![The live interpretation area in Meaning Check 0.3.3](documentation/screenshots/live-card-main-20261014.png)
+
+This is **the actual extension in Dia with a live model result**, cropped to the reading, tone and communicative function. Evidence, complete sources and media notices appear elsewhere in the card. Chinese is selected for this capture.
+
+Source: [Al Tanto's public reply](https://x.com/Altantoo19/status/2110320021570310175). The case contains a Spanish reply, a Portuguese parent and an English thread starter, verified in an earlier live run. This image shows only the interpretation area, not a guarantee of agreement across models or a fact check of the reported news. Capture provenance and limits are in [the image notes](documentation/screenshots/README.md).
 
 ## Install and start
 

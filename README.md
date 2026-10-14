@@ -15,9 +15,13 @@
 - 自带模型 API：DeepSeek、Grok / xAI、GPT / OpenAI、Claude / Anthropic、Gemini、GLM、千问、Kimi、MiniMax，以及自定义兼容接口。
 - 默认支持 X 和 Reddit；可管理网站与路径，其他已授权网站通过选中文字使用。界面和解读输出语言可分别设置。
 
-![原文下方的解读卡片](documentation/evidence/result-light.png)
+## 实际使用效果
 
-截图来自实际插件的模拟网页 / 模型自测，用于展示交互，不代表真实模型质量。
+![Meaning Check 0.3.3 的真实解读主区域](documentation/screenshots/live-card-main-20261014.png)
+
+这是 **Dia 中实际插件的一次真实模型解读**，截取了大意、语气和「在做什么」区域。依据、完整原文和媒体提醒位于卡片其他部分，使用时可按需展开。
+
+案例：[Al Tanto 的公开回复](https://x.com/Altantoo19/status/2110320021570310175)。这一条包含西班牙语回复、葡萄牙语回应对象与英语主题帖；此前真实验证已核对三层原文。此处只展示解读主区域，不代表所有模型会作相同判断，也不验证帖子中的新闻。版本、截图来源和展示边界见 [图片记录](documentation/screenshots/README.md)。
 
 ## 安装与开始使用
 

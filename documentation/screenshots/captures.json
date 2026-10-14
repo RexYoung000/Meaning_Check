@@ -1,0 +1,35 @@
+{
+  "date": "2026-10-14",
+  "version": "0.3.3",
+  "source": "Native Dia DevTools node screenshot of the actual extension and a live model response",
+  "url": "https://x.com/Altantoo19/status/2110320021570310175",
+  "sourceRoles": {
+    "current": "2110320021570310175",
+    "parent": "2110298124648345847",
+    "root": "2110267943976067515"
+  },
+  "sourceSha256": "5e06107fdcfe4fc67243b7c97a418dff08f2ad75887facbc98f4a1a01c28faff",
+  "captureSize": [
+    1132,
+    690
+  ],
+  "crop": [
+    0,
+    255,
+    1132,
+    650
+  ],
+  "publishedSize": [
+    1132,
+    395
+  ],
+  "publishedSha256": "53023e67aff57945ca5dd015630f34b4d836bc2c5dc692983e13e27bd36da681",
+  "modification": "Crop only; no resizing, retouching, text edits or generated UI",
+  "publishedContent": "Card header, main reading, tone and communicative function",
+  "notShown": "Source post, evidence, media notice and source/background details",
+  "additionalAgentModelRequests": 1,
+  "fullCardAndExpandedContext": "Not completed; only the verified main area is published",
+  "privateWindowCaptureRetained": false,
+  "sourceRolesEvidence": "Three original roles verified in earlier 0.3.3 run; this image shows the main area only",
+  "nativeFullCaptureLimitation": "Native node export offset; reconnected native action returned AXError.notImplemented"
+}

@@ -329,7 +329,7 @@
     }
   },
   "liveModel": {
-    "calls": 5,
+    "calls": 6,
     "countScope": "Agent recorded real inference calls; user calls are not audited",
     "verified": "Native X original Spanish reply, Portuguese direct parent, English thread root, and Chinese reading after scope fix",
     "provider": "DeepSeek",
@@ -370,12 +370,20 @@
         "elapsedSecondsShown": 21.1,
         "totalTokensShown": 3705,
         "status": "valid-result-three-original-roles"
+      },
+      {
+        "version": "0.3.3",
+        "action": "public-case-showcase-capture",
+        "url": "https://x.com/Altantoo19/status/2110320021570310175",
+        "status": "valid-result-main-area-captured",
+        "metadataReobserved": false,
+        "automaticRetries": 0
       }
     ],
     "firstBatchLimit": 20,
     "automaticRetries": 0,
     "remaining": "10-example understanding acceptance, other providers and real output locales/layouts",
-    "currentVersionCalls": 2
+    "currentVersionCalls": 3
   },
   "evidence": "Mock fixture results are not live provider or model quality evidence",
   "archiveSha256": "73f196d3052675cf7fbb37c46dbc27877529f06f361cab4c2f25f73a7dcba78a",
@@ -408,7 +416,7 @@
     "limitation": "Pattern scan, not an exhaustive guarantee",
     "historicalScanVersion": "0.3.1",
     "currentScanVersion": "0.3.3",
-    "currentTextFilesScanned": 82
+    "currentTextFilesScanned": 84
   },
   "regressionBeforeFix": {
     "command": "pnpm exec vitest run tests/dom.test.ts",
@@ -417,5 +425,22 @@
     "error": "className.includes is not a function",
     "nativeSameErrorObserved": true,
     "cause": "SVG nodes were treated as HTML class strings; snapshot evaluated outside feedback/error handling"
+  },
+  "showcase": {
+    "date": "2026-10-14",
+    "actualExtension": true,
+    "liveModelResult": true,
+    "visibleArea": "Header, main reading, tone and communicative function",
+    "asset": "documentation/screenshots/live-card-main-20261014.png",
+    "sha256": "53023e67aff57945ca5dd015630f34b4d836bc2c5dc692983e13e27bd36da681",
+    "cropOnly": true,
+    "fullCardAndExpandedContext": "pending",
+    "temporaryWholeWindowRetained": false,
+    "originalRolesVerifiedInEarlierRun": true,
+    "publicDestination": "GitHub README / profile and personal portfolio source",
+    "siteProductionDeployment": "pending",
+    "readmeLinksVerified": true,
+    "imageVisuallyReviewed": true,
+    "nativeFullCaptureLimitation": "Native node export offset; reconnected native action returned AXError.notImplemented"
   }
 }
