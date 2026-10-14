@@ -259,8 +259,20 @@
   "archiveSha256": "894ee60f0eb67cc4fc65c9246e5925b0986ea89f7c438cbf1a21fd478d636a28",
   "publication": {
     "repository": "https://github.com/RexYoung000/Meaning_Check",
-    "status": "pending",
-    "profileFeatured": "pending",
+    "status": "public-source-pushed",
+    "visibility": "public",
+    "license": "MIT",
+    "sourceFixCommit": "b12181dd50a151ca0642975ae647af2c67431322",
+    "bilingualReadmesVerified": true,
+    "profile": "https://github.com/RexYoung000",
+    "profileRepository": "https://github.com/RexYoung000/RexYoung000",
+    "profileCommit": "ca9e65988045ced7caff7b1d66d71f4b21f9ac02",
+    "profileFeatured": true,
+    "profileUIVerified": true,
+    "pinnedItemsVerified": [
+      "RexYoung000/apple-ui-design-skill",
+      "RexYoung000/Meaning_Check"
+    ],
     "storeRelease": false,
     "githubRelease": false
   },

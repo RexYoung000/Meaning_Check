@@ -33,7 +33,9 @@
 
 ### 公开开源同步
 
-中文 README.md 与英文 README.en.md 同步记录安装、实际功能、判定规则和限制；采用 MIT。已检查当前文件与 174 个历史 Git 文本块的凭据模式，未发现匹配；个人安装位置不纳入当前公开验证摘要。计划同步到 RexYoung000/Meaning_Check，并在 GitHub 个人主页设为重点项目；外部操作结果完成后回写。本轮不发布商店或 GitHub Release。
+中文 README.md 与英文 README.en.md 同步记录安装、实际功能、判定规则和限制；采用 MIT。已检查当前文件与 174 个历史 Git 文本块的凭据模式，未发现匹配；个人安装位置不纳入当前公开验证摘要。已创建并推送至 [公开仓库 RexYoung000/Meaning_Check](https://github.com/RexYoung000/Meaning_Check)，GitHub 返回 public、private=false、MIT，主分支提交与本地一致；已确认 README.md 与 README.en.md 均在远端。
+
+[GitHub 个人主页](https://github.com/RexYoung000)已显示中英重点项目介绍、安装和反馈入口，Meaning Check 已加入固定项目，同时保留原有 apple-ui-design-skill。主页介绍由公开同名仓库维护，原生界面和 GitHub 固定列表均已核对。固定列表当前顺序为 apple-ui-design-skill、Meaning_Check；主页介绍中的首个重点项目是 Meaning Check。本轮没有发布商店或 GitHub Release。
 
 以下是旧版历史记录，过去的安装版本和真实调用数只适用于当时；当前证据以本节和 [验证摘要](evidence/verification.json) 为准。
 
