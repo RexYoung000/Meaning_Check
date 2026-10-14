@@ -237,7 +237,7 @@
     "popup.html": "19b36e630b006b9d5886f71a01b11620c99f0a81c27f912127b674b901b2b010",
     "welcome.html": "440ed967d3ae489f9937105b899531d2365d2c9c1206ad4176a4437880619722"
   },
-  "archive": ".output/meaning-check-0.3.2-chrome.zip",
+  "archive": ".output/meaning-check-0.3.3-chrome.zip",
   "protocolsMocked": [
     "chat",
     "responses",
@@ -246,13 +246,13 @@
   "dia": {
     "installed": true,
     "lastObservedVersion": "0.3.3",
-    "versionEvidence": "Native Details Reload plus a new X document with updated labels and three original context roles",
+    "versionEvidence": "Final native Details Reload confirmed version 0.3.3 and the unchanged extension ID; a fresh X document displayed Identify intent and extension settings entries",
     "filesUpdatedTo": "0.3.3",
     "matchedBuildFiles": 22,
     "backup": ".output/dia-backups/20261014-201447",
     "permissionsChanged": false,
     "profileStorageTouched": false,
-    "upgradeReloadVerified": false,
+    "upgradeReloadVerified": true,
     "fullRuntimeVerified": false,
     "settingsEntryVerifiedInVersion": "0.3.0",
     "realXEntryVerified": true,
@@ -314,7 +314,19 @@
       "initialScopeFailure": "First request incorrectly labeled the reply as standalone; fixed by retaining known relationships during original-text restoration"
     },
     "previousCoreBuildReloadVerified": true,
-    "finalReloadBlocked": "Mac locked during last native Reload; core original/context results were verified before the final known-media metadata change"
+    "finalBuildReloadVerified": true,
+    "finalReloadCheck": {
+      "date": "2026-10-14",
+      "afterManualUnlock": true,
+      "nativeDetailsReloadClicked": true,
+      "observedVersion": "0.3.3",
+      "freshXEntryVerified": true,
+      "observedPageUrl": "https://x.com/Altantoo19",
+      "observedActionLabel": "帮我意图识别",
+      "observedSettingsLabel": "插件设置",
+      "additionalModelCalls": 0,
+      "translationAndThreeOriginalRoles": "Verified in the earlier live case; not re-requested for this reload-only check"
+    }
   },
   "liveModel": {
     "calls": 5,
