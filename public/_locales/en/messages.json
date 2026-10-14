@@ -1,0 +1,8 @@
+{
+  "extensionName": {
+    "message": "Meaning Check"
+  },
+  "extensionDescription": {
+    "message": "Understand public replies with tone, context and evidence. Bring your own model API."
+  }
+}

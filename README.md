@@ -1,32 +1,37 @@
 # Meaning Check
 
-开源的公开交流理解浏览器插件，工程名 Meaning_Check。用户自带模型 API，点击「帮我确认意思」，先读主解读，再看语气和原文依据。MIT 许可。[English](README.en.md)。
+开源的公开交流理解浏览器插件。使用自己的模型 API，点击「帮我确认意思」，先读主解读，再看语气和原文依据。MIT 许可。[English](README.en.md)。
 
-## 当前阶段
+## 当前版本
 
-2026-10-14 升级规则已对齐并先建档：九家厂商、双语、输出本地化、Reddit / 网站管理、图标和引导，进入实施。新增能力尚未完成验证。型号与来源见 [模型清单](documentation/models.md)。
+0.2.0 已实现图标与常驻按钮、工具栏、首次引导、中英界面、独立输出语言、九家模型厂商与自定义接口、网站 / 路径管理，以及 X / Reddit 回复和自定义网页选区入口。已有 DeepSeek 配置有迁移保护；保存与连接测试分别显示。
 
-首版业务功能已实现，自动化与隔离浏览器自测通过，已加载到 Dia。真实 Dia / X 页面操作及 DeepSeek 解读质量仍待完成验证。此为浏览器插件，没有独立网站或业务服务器。
+类型、逻辑检查、隔离浏览器中实际插件、构建和权限检查的结果见 [测试记录](documentation/tests.md)。网站和模型的自动化场景使用模拟数据。真实厂商调用及新版 Dia / 公开网页体验尚未完成验收；当前真实推理调用为 0。
 
-## 开发与加载
+## 在 Dia 使用新版
 
-Node 24、pnpm 10。`pnpm install` 安装依赖，`pnpm dev` 开发，`pnpm build` 生成 `.output/chrome-mv3`。在 Dia 的扩展管理页开启开发者模式，选择「加载已解压的扩展程序」，载入该目录。
+1. 打开 Dia 的扩展管理页（地址栏输入 `chrome://extensions`），找到 Meaning Check，点击 Reload / 重新加载。确认版本 0.2.0；若此前未加载，开启开发者模式，加载本项目的 `.output/chrome-mv3`。
+2. 从浏览器的扩展菜单找到 Meaning Check，支持时固定到工具栏。点击图标 → 设置；也可从扩展详情 → Extension options 进入。首次安装 / 首次升级会打开一次使用指南，之后可从弹窗或设置再次打开。
+3. 在「模型连接」新增自己的连接：厂商 → 完整模型名称 → API 密钥 → 保存。原有 DeepSeek 配置自动迁入。需要验证时点击「编辑 → 测试连接」，会进行一次可能收费的 API 调用。保存、悬停、切换型号及免费示例不进行推理。
+4. 「语言」分别设置界面和解读语言。界面可随时切换 中文 / English；解读默认跟随浏览器完整语言，或选择简体中文、English、日语等 / 自填语言代码。改界面不会自动改解读语言。引用保留原文。
+5. 刷新 X / Reddit 页面，点击公开回复下常驻的「帮我确认意思」。缺上下文时先选择补齐、现有内容分析或手动补充；关闭或暂停即取消当前任务。
 
-扩展工具栏按钮打开本地设置页，也可在扩展管理中选择 Meaning Check → Details → Extension options。已加载后修改代码，需要先构建、在扩展管理中重新加载，再刷新 X 页面。
+在「网站」可关闭、编辑、删除或新增 HTTPS 来源及路径（每行一条，* 通配，满足任意一条即可）。Reddit 默认含 www.reddit.com 和 reddit.com 两个来源项。新来源由浏览器按需授权；自定义网页先选中文字，点击入口确认可选背景，再分析，不读取整页、编辑框或私信。自定义 API 支持 HTTPS 或 localhost / 127.0.0.1 的 HTTP 地址。
 
-填写自己的 DeepSeek 密钥并保存；密钥只保存在当前浏览器的插件存储中。打开英文 X 回复页面，悬停或用键盘聚焦回复，点击「帮我确认意思」。
+图文、GIF 只覆盖文字；模型错误、无效依据或截断结果不展示为结论。没有业务服务器、分析历史、回复生成或自动发送。密钥仅保存在本浏览器扩展的可信存储，网页不能读取；更换接口地址需重新填写密钥。
 
-首次运行浏览器测试先执行 `pnpm exec playwright install chromium`。也可通过 `MEANING_CHECK_CHROMIUM` 指定已有的官方 Chromium / Chrome for Testing，始终使用临时独立配置，不能指向个人浏览器资料目录。
+## 开发与交付
 
-`pnpm typecheck`、`pnpm test`、`pnpm test:e2e`、`pnpm check:package` 为交付检查。检查结果以 [测试记录](documentation/tests.md) 为准。
+Node 24、pnpm 10。`pnpm install` 安装，`pnpm dev` 开发，`pnpm build` 生成 `.output/chrome-mv3`，`pnpm zip` 生成 `.output/meaning-check-0.2.0-chrome.zip`。构建后重新加载扩展并刷新网页。图标维护源为 public/icon.svg，`pnpm icons` 生成四种 PNG；构建与打包自动复制根 LICENSE。
 
-## 文档入口
+检查：`pnpm typecheck`、`pnpm test`、`pnpm build`、`pnpm test:e2e`、`pnpm check:package`。首次测试运行 `pnpm exec playwright install chromium`；也可用 `MEANING_CHECK_CHROMIUM` 指定官方测试浏览器。测试只建立独立临时配置，不使用个人浏览器资料。
 
-- [产品规则](documentation/product.md)
-- [设计与交互](DESIGN.md)
-- [架构、权限与配置](documentation/architecture.md)
-- [测试与验收](documentation/tests.md)
-- [10 条真实回复的验收记录](documentation/evidence/live-evaluation.json)
-- [研究依据](documentation/research.md)
+## 文档
 
-最终体验由 Rex 在 Dia 中验收；工程自测与真实模型质量分别记录。发布及商店上架由 Rex 决定。
+- [产品规则](documentation/product.md)、[界面与交互](DESIGN.md)
+- [模型、API ID 和官方来源](documentation/models.md)
+- [架构、权限、密钥与迁移](documentation/architecture.md)
+- [验证结果与待验收项](documentation/tests.md)
+- [真实回复验收候选](documentation/evidence/live-evaluation.json)、[研究记录](documentation/research.md)
+
+当前只保留本地源码与提交，没有远端或商店发布。最终视觉、使用体验及真实理解价值由 Rex 验收。

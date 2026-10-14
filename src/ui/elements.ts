@@ -9,12 +9,12 @@ export function node(tag: string, text?: string, className?: string): HTMLElemen
 export function button(text: string, action: () => void, className = 'button'): HTMLButtonElement {
   const el = node('button', text, className);
   el.type = 'button';
-  el.addEventListener('click', action);
+  el.addEventListener('click', event => { if (event.isTrusted) action(); });
   return el;
 }
 export function safeLink(text: string, url: string): HTMLAnchorElement {
   const a = node('a', text);
-  if (url.startsWith('https://x.com/')) { a.href = url; a.target = '_blank'; a.rel = 'noopener noreferrer'; }
+  try { const u = new URL(url); if (u.protocol === 'https:') { a.href = u.href; a.target = '_blank'; a.rel = 'noopener noreferrer'; } } catch { /* Invalid sources are never navigable. */ }
   return a;
 }
 export function darkTheme(): boolean {

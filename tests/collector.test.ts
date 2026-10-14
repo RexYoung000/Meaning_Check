@@ -22,6 +22,8 @@ describe('临时页 ownership 与清理',()=>{
   it('取消创建中的任务仍清理登记的页',async()=>{
     const controller=new AbortController();fake.tabs.create.mockImplementation(async()=>{controller.abort();return {id:12};});fake.tabs.get.mockResolvedValue({url:'about:blank'});const collector=new Collector('token');await expect(collector.read(post('1').url,controller.signal)).rejects.toMatchObject({name:'AbortError'});expect(fake.tabs.remove).toHaveBeenCalledWith(12);expect(fake.store.collectorTabs).toEqual([]);expect(fake.tabs.update).not.toHaveBeenCalled();
   });
+  it('导航尚未提交时通过 pendingUrl 清理，避免暂停遗留空白页',async()=>{fake.store.collectorTabs=[{id:12,token:'token',expires:0,pending:false}];fake.tabs.get.mockResolvedValue({url:'about:blank',pendingUrl:'https://x.com/person/status/1?mc-collector=token'});await cleanupOrphans();expect(fake.tabs.remove).toHaveBeenCalledWith(12);});
+  it('用户已有新的待提交导航时保留页面，即使旧 URL 仍带插件标记',async()=>{fake.store.collectorTabs=[{id:12,token:'token',expires:0,pending:false}];fake.tabs.get.mockResolvedValue({url:'https://x.com/person/status/1?mc-collector=token',pendingUrl:'https://x.com/person/status/55'});await cleanupOrphans();expect(fake.tabs.remove).not.toHaveBeenCalled();});
   it('会话记录不包含帖子正文或模型结果',async()=>{
     vi.useFakeTimers();const collector=new Collector('token');const task=collector.read(post('1').url,new AbortController().signal);await vi.advanceTimersByTimeAsync(1001);await task;expect(Object.keys(fake.store.collectorTabs[0]).sort()).toEqual(['expires','id','pending','token']);await collector.close();vi.useRealTimers();
   });

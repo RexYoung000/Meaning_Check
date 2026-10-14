@@ -33,10 +33,12 @@ export async function mockNetwork(context:BrowserContext,state:NetworkState) {
   });
 }
 export async function configure(context:BrowserContext,extensionId:string):Promise<Page> {
-  const options=await context.newPage();await options.goto('chrome-extension://'+extensionId+'/options.html');
-  await options.getByLabel('DeepSeek 密钥',{exact:true}).fill('test-only-not-a-credential');
-  await options.getByRole('button',{name:'保存密钥',exact:true}).click();
-  await options.getByText('密钥已保存。现在可以到 X 回复旁使用。').waitFor();return options;
+  const options=await context.newPage();await options.goto('chrome-extension://'+extensionId+'/options.html#models');
+  await options.getByRole('button',{name:'中文',exact:true}).click();
+  await options.getByRole('heading',{name:'模型连接',exact:true}).waitFor();
+  await options.locator('#api-key').fill('test-only-not-a-credential');
+  await options.getByRole('button',{name:'保存',exact:true}).click();
+  await options.getByText('已保存。',{exact:true}).waitFor();return options;
 }
 export async function entry(page:Page,id='3') {
   const article=page.locator('article').filter({has:page.locator('a[href="/person/status/'+id+'"]')});

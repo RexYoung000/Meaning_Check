@@ -1,11 +1,13 @@
 {
-  "scope": "实际插件 + 隔离 Chromium；X 和 DeepSeek 为模拟夹具",
+  "version": "0.2.0",
+  "date": "2026-10-14",
+  "scope": "Actual extension in isolated Chrome for Testing 156; X / Reddit / custom pages and APIs are mocked",
   "unitIntegration": {
-    "passed": 54,
+    "passed": 77,
     "failed": 0
   },
   "browser": {
-    "passed": 14,
+    "passed": 21,
     "failed": 0,
     "scenarios": [
       {
@@ -63,23 +65,80 @@
       {
         "name": "纯 emoji 回复也有入口并保留原文依据",
         "passed": true
+      },
+      {
+        "name": "首次引导有免费示例与中英文入口，刷新不再次推理",
+        "passed": true
+      },
+      {
+        "name": "九家预置型号可读，手填 ID 和保存不调用模型，连接测试明确费用",
+        "passed": true
+      },
+      {
+        "name": "界面可切英文，输出独立为日语，quote 保持原文",
+        "passed": true
+      },
+      {
+        "name": "Reddit 评论父根去重，常驻按钮点击后才发请求",
+        "passed": true
+      },
+      {
+        "name": "网站路径任一匹配；暂停清理补齐，重新启用恢复入口",
+        "passed": true
+      },
+      {
+        "name": "工具栏显示真实配置与网站开关，双语和窄窗设置可操作",
+        "passed": true
+      },
+      {
+        "name": "自定义网站仅采集选区，背景可选，删除后移除入口",
+        "passed": true
       }
     ]
   },
   "typecheck": "passed",
   "build": "passed",
   "packageCheck": "passed",
-  "manifestSha256": "f5c58e723b507865206b491111c32af0f362eaddaf8217067b8198d3645cdad7",
+  "manifestSha256": "7b0cf4f6a030fece65f7d619618d826513357af8ceddcc8ef76a65befe498c61",
+  "protocolsMocked": [
+    "chat",
+    "responses",
+    "messages"
+  ],
   "dia": {
     "installed": true,
-    "version": "0.1.0",
+    "lastObservedVersion": "0.1.0",
+    "upgradeReloadVerified": false,
     "fullRuntimeVerified": false,
-    "limitation": "后续实际页面交互被保护中断"
+    "limitation": "Reload interrupted while the user was using Dia; refresh to 0.2.0 required"
   },
   "liveModel": {
     "calls": 0,
     "verified": false,
-    "requires": "本地设置页配置及真实页面操作"
+    "requires": "Local API configuration and real provider/page acceptance"
   },
-  "evidence": "mock fixture results are not model quality evidence"
+  "evidence": "Mock fixture results are not live provider or model quality evidence",
+  "buildFilesSha256": {
+    "LICENSE.txt": "656bb9238233d88cdaf95b96d21fb696ba553c522503411711be72897b040f86",
+    "_locales/en/messages.json": "20d6cf944f70b854e38e3534f0f134729fce7dddf1d8cc7cafd0463488082b7c",
+    "_locales/zh_CN/messages.json": "57ee1c2149dbcb1ac2828226334b3b05daf214419eb0086abedc1371d24a0689",
+    "assets/options-DiqgAPxV.css": "7e5fd39eb24176f80dd64a93d16994e9bd86548d546281746cb3aee63b9d52bd",
+    "background.js": "4ba2dec26ec796403f1c87dbbd60daded36ea7b6645ffeb56de4db48881556b1",
+    "chunks/models-CTRIWj60.js": "01f4f4de3350c0a0b8dac43ef6f47af316dbc3038d7c473ea670023020477636",
+    "chunks/options-CmWGtL_Y.js": "b05524981c178b10880437aed62bdddd0d5eefd73d9aa5982088445d3a234905",
+    "chunks/page-Cw-hyq0S.js": "6414e988cf32487611e2262fa33564adc2b0e8f1bd22bec71b9b4ad1c2c18e7d",
+    "chunks/popup-Bb84YOwe.js": "476198525c5173ed9867d0182ee608886086fe2aa49881abe3b194c619cf0ff9",
+    "chunks/welcome-CoqbdpJE.js": "8b8fa23407b529fc4bef50064aa79054d5e7103eebc6021d7ce6bc31767bd752",
+    "content-scripts/selection.js": "c00a542f84777c1581642c25ba6cfdfd03e7c303d9162d7d585e9c0ab10baf1c",
+    "content-scripts/x.js": "a95a6bc14c9bacd718027c1b76655eb3412f78f000ba209dac1db90c91847eb1",
+    "icon.svg": "d3ca3a658e90e9f964904d5f3b6e25e585c2bd6b3c0f4a14fe94662d4c28456e",
+    "icons/128.png": "7cf8a307d50671035aebfcb61f3e58df9963da5f2c1306f82df75fcb54552171",
+    "icons/16.png": "9f93f68f26ae6a2c9ed4fe2531e7cc8a892044c627c629017469f10adcb739af",
+    "icons/32.png": "27bb28c7135f2efd0bd02fb4bed89774c58569d7017bc7a39e3b963dc0d23a75",
+    "icons/48.png": "18b353afca24d8d4214fa1b09871090168fb1f66e91ada75968a012a43644f65",
+    "manifest.json": "7b0cf4f6a030fece65f7d619618d826513357af8ceddcc8ef76a65befe498c61",
+    "options.html": "0e6a74c58e693c71bed600232f60925fa4b2a2520e345d53b2f6c74ed4c3026f",
+    "popup.html": "893ed6bf11d8d0b1b5155a8308a9e9677a503048d781181bf000e52db10942f4",
+    "welcome.html": "e5e9b4f749d5898d1eddcada19682e09a49ed7d4bd4ce0ef368f6c8e9c2e9ba3"
+  }
 }

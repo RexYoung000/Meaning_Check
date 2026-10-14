@@ -1,7 +1,7 @@
 import type { ContextBundle, ContextRole, PageSnapshot, Post } from '../shared/types';
 import { INPUT_LIMIT, MAX_ANCESTORS, CONTEXT_TIMEOUT_MS } from '../shared/constants';
 import { UserError, composeSignals, throwIfAborted } from '../shared/errors';
-import { postRef } from '../x/urls';
+import { threadRef } from '../shared/thread';
 
 export function bundleOf(current: Post, parent?: Post, root?: Post): ContextBundle {
   const byId = new Map<string, Post>();
@@ -16,11 +16,11 @@ export function bundleOf(current: Post, parent?: Post, root?: Post): ContextBund
 }
 export function validatePost(value: unknown): Post {
   const p = value as Partial<Post> | null;
-  const ref = typeof p?.url === 'string' ? postRef(p.url) : undefined;
-  if (!p || !ref || ref.id !== p.id || p.origin !== 'x' || typeof p.text !== 'string' || !p.text.trim() || p.text.length > 60_000 || typeof p.hasMedia !== 'boolean' || typeof p.truncated !== 'boolean') {
+  const ref = typeof p?.url === 'string' ? threadRef(p.url) : undefined;
+  if (!p || !ref || ref.id !== p.id || !['x','reddit'].includes(p.origin ?? '') || (p.origin === 'x' && !ref.id.match(/^\d+$/)) || (p.origin === 'reddit' && !ref.id.startsWith('t')) || typeof p.text !== 'string' || !p.text.trim() || p.text.length > 60_000 || typeof p.hasMedia !== 'boolean' || typeof p.truncated !== 'boolean') {
     throw new UserError('bad-input', '没有读到完整的帖子正文，请打开该回复详情再试。');
   }
-  return { id: ref.id, url: ref.url, text: p.text.trim(), hasMedia: p.hasMedia, truncated: p.truncated, origin: 'x' };
+  return { id: ref.id, url: ref.url, text: p.text.trim(), hasMedia: p.hasMedia, truncated: p.truncated, origin: p.origin as 'x' | 'reddit' };
 }
 export function validateSnapshot(value: unknown, requested: string): PageSnapshot | undefined {
   try {
@@ -45,7 +45,7 @@ export function applyManual(bundle: ContextBundle, values?: Partial<Record<Conte
   }
   const used = new Set(Object.values(next.roles));
   next.posts = next.posts.filter(p => used.has(p.id));
-  next.missing = ['parent', 'root'].filter(role => !next.roles[role as 'parent' | 'root']) as ContextBundle['missing'];
+  next.missing = next.mode === 'selection' ? [] : ['parent', 'root'].filter(role => !next.roles[role as 'parent' | 'root']) as ContextBundle['missing'];
   return next;
 }
 export function assertInputSize(bundle: ContextBundle): void {
@@ -104,8 +104,21 @@ export function validateBundle(value: unknown): ContextBundle {
       if (!/^manual-(current|parent|root)$/.test(p.id) || p.url !== '' || typeof p.text !== 'string' || !p.text.trim() || p.text.length > 60_000) throw new UserError('bad-input','补充材料不完整，请重新填写。');
       return { id:p.id, url:'', text:p.text.trim(), hasMedia:false, truncated:false, origin:'manual' as const };
     }
+    if (b.mode === 'selection' && p?.origin === 'web') {
+      let url: URL; try { url = new URL(p.url); } catch { throw new UserError('bad-input','选区来源无效。'); }
+      if (url.protocol !== 'https:' || p.id !== 'selection' || typeof p.text !== 'string' || !p.text.trim() || p.text.length > 60_000) throw new UserError('bad-input','选区材料无效。');
+      return {id:'selection',url:url.href,text:p.text.trim(),hasMedia:false,truncated:false,origin:'web' as const};
+    }
     return validatePost(p);
   });
   if (new Set(posts.map(p => p.id)).size !== posts.length || !posts.find(p=>p.id===b.roles.current) || Object.values(b.roles).some(id => typeof id !== 'string' || !posts.find(p=>p.id===id))) throw new UserError('bad-input','上下文来源不一致，请重新选择回复。');
-  return bundleOf(posts.find(p=>p.id===b.roles.current)!, posts.find(p=>p.id===b.roles.parent), posts.find(p=>p.id===b.roles.root));
+  const result = bundleOf(posts.find(p=>p.id===b.roles.current)!, posts.find(p=>p.id===b.roles.parent), posts.find(p=>p.id===b.roles.root));
+  if (b.mode === 'selection') { result.mode = 'selection'; result.missing = []; }
+  return result;
+}
+
+export function selectionBundle(value:Post, pageUrl:string):ContextBundle {
+  const bundle=validateBundle({mode:'selection',roles:{current:'selection'},posts:[value],missing:[],warnings:[]});
+  if(new URL(bundle.posts[0]!.url).origin!==new URL(pageUrl).origin)throw new UserError('bad-input','选区与页面来源不一致。');
+  return bundle;
 }

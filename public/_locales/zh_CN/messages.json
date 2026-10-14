@@ -1,0 +1,8 @@
+{
+  "extensionName": {
+    "message": "Meaning Check · 帮我确认意思"
+  },
+  "extensionDescription": {
+    "message": "结合上下文，读懂公开回复的意思、语气与依据。使用自己的模型 API。"
+  }
+}

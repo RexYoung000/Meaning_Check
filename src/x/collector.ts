@@ -3,7 +3,7 @@ import { COLLECTOR_PARAM } from '../shared/constants';
 import { UserError, wait, throwIfAborted } from '../shared/errors';
 import type { PageSnapshot } from '../shared/types';
 import { validateSnapshot } from '../analysis/context';
-import { postRef } from './urls';
+import { threadRef } from '../shared/thread';
 
 interface OwnedTab { id: number; token: string; expires: number; pending?: boolean }
 const REGISTRY = 'collectorTabs';
@@ -19,7 +19,11 @@ async function mutateRegistry(fn: (tabs: OwnedTab[]) => OwnedTab[]): Promise<voi
 async function removeOwned(tab: OwnedTab): Promise<void> {
   try {
     const live = await browser.tabs.get(tab.id);
-    if ((tab.pending && (!live.url || live.url === 'about:blank')) || (live.url && new URL(live.url).searchParams.get(COLLECTOR_PARAM) === tab.token)) await browser.tabs.remove(tab.id);
+    const ours=(value?:string)=>{try{return !!value && new URL(value).searchParams.get(COLLECTOR_PARAM)===tab.token;}catch{return false;}};
+    // A not-yet-committed navigation exposes the target as pendingUrl, not url.
+    // Conversely, a user navigation away must take precedence over our old URL.
+    if(live.pendingUrl && !ours(live.pendingUrl))return;
+    if(ours(live.pendingUrl)||ours(live.url)||(tab.pending&&(!live.url||live.url==='about:blank')))await browser.tabs.remove(tab.id);
   } catch { /* Closed or navigated tabs are not ours to remove. */ }
 }
 export async function cleanupOrphans(): Promise<void> {
@@ -31,7 +35,7 @@ export class Collector {
   private tab?: OwnedTab;
   constructor(private token: string) {}
   async read(url: string, signal: AbortSignal): Promise<PageSnapshot> {
-    const ref = postRef(url);
+    const ref = threadRef(url);
     if (!ref) throw new UserError('context-url', '无法确认需要补齐的帖子地址。');
     throwIfAborted(signal);
     const target = new URL(ref.url);
