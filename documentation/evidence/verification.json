@@ -1,27 +1,47 @@
 {
-  "version": "0.3.3",
-  "date": "2026-10-14",
+  "version": "0.3.4",
+  "date": "2026-10-16",
   "scope": "Actual extension in isolated Chrome for Testing 156; X / Reddit / custom pages and APIs are mocked",
   "unitIntegration": {
-    "passed": 107,
+    "passed": 114,
     "failed": 0
   },
   "browser": {
-    "passed": 46,
+    "passed": 48,
     "failed": 0,
     "runs": [
       {
-        "command": "pnpm exec playwright test tests/e2e/reading.spec.ts --max-failures=2",
-        "passed": 8,
-        "failed": 0
-      },
-      {
-        "command": "pnpm exec playwright test --max-failures=2",
-        "passed": 46,
-        "failed": 0
+        "command": "pnpm test:e2e",
+        "passed": 48,
+        "failed": 0,
+        "note": "Final serial run after native depth=0/postid fix. Earlier failures were investigated; no assertions weakened."
       }
     ],
     "scenarios": [
+      {
+        "name": "独立原帖和时间线内容直接解读，缺项不适用，媒体展开不误判",
+        "passed": true
+      },
+      {
+        "name": "真正未展开先提示正文问题，展开后重试使用新文字并显示等待反馈",
+        "passed": true
+      },
+      {
+        "name": "缺父帖后第二次确认显示动效和新计时，使用页面最新正文",
+        "passed": true
+      },
+      {
+        "name": "失败后主动重新分析也保留阶段、计时，不自动发第二次请求",
+        "passed": true
+      },
+      {
+        "name": "未确认回复关系与已知回复缺父帖分别提示，均不自动请求",
+        "passed": true
+      },
+      {
+        "name": "Reddit 独立主帖也能直接解读，不要求评论父链",
+        "passed": true
+      },
       {
         "name": "未配置时引导设置；悬停不调用、不打开补齐页",
         "passed": true
@@ -115,6 +135,54 @@
         "passed": true
       },
       {
+        "name": "经典 X 当前页三层关系不会被临时页仅显示焦点的状态改成独立帖",
+        "passed": true
+      },
+      {
+        "name": "X 原生自动翻译只在临时页恢复三份原文，用户页保持翻译且不发送中文译文",
+        "passed": true
+      },
+      {
+        "name": "恢复原文仍未成功时可取消临时页，译文不能进入付费分析",
+        "passed": true
+      },
+      {
+        "name": "翻译副本在前时读取三份原文，跨包装层保留主题帖，结果默认简洁可展开",
+        "passed": true
+      },
+      {
+        "name": "主题帖不在当前页时继续补齐，不能把直接回复对象当主题帖",
+        "passed": true
+      },
+      {
+        "name": "只有已标记译文时给出原文错误，不调用模型，显示原文后主动重试",
+        "passed": true
+      },
+      {
+        "name": "加载只有阶段计时动效和取消，没有多余过程说明",
+        "passed": true
+      },
+      {
+        "name": "现有 X 与 Reddit 按钮实时随界面语言更换，输出语言可独立为西班牙语",
+        "passed": true
+      },
+      {
+        "name": "Reddit 新版直接回复主题帖一键读取完整范围，只发送三个角色",
+        "passed": true
+      },
+      {
+        "name": "Reddit 新版多层回复一键读取完整范围，只发送三个角色",
+        "passed": true
+      },
+      {
+        "name": "真实类型 SVG 图标的时间线卡片立即加载，正常得到结果且不重复请求",
+        "passed": true
+      },
+      {
+        "name": "页面读取异常显示可重试错误且未调用模型，主动重试后恢复加载",
+        "passed": true
+      },
+      {
         "name": "首次引导有免费示例与中英文入口，刷新不再次推理",
         "passed": true
       },
@@ -140,70 +208,6 @@
       },
       {
         "name": "自定义网站仅采集选区，背景可选，删除后移除入口",
-        "passed": true
-      },
-      {
-        "name": "独立详情与时间线帖子直接解读，披露实际范围，不创建补齐页",
-        "passed": true
-      },
-      {
-        "name": "正文未展开单独提示；展开后重试更新文字和动效计时",
-        "passed": true
-      },
-      {
-        "name": "缺父链选择现有内容分析，重新读取当前文字并显示加载",
-        "passed": true
-      },
-      {
-        "name": "失败后主动重试重新显示计时，仅两次明确用户请求",
-        "passed": true
-      },
-      {
-        "name": "未确认关系与缺父链分别提示",
-        "passed": true
-      },
-      {
-        "name": "Reddit 根帖直接按独立帖子解读",
-        "passed": true
-      },
-      {
-        "name": "原生 SVG 的时间线卡片正常加载、计时和结果，重复点击不重复请求",
-        "passed": true
-      },
-      {
-        "name": "读取异常显示可重试错误，不请求模型；主动重试恢复正常加载",
-        "passed": true
-      },
-      {
-        "name": "经典 X 已确认三层关系不被临时页焦点独立状态覆盖",
-        "passed": true
-      },
-      {
-        "name": "X 原生翻译在临时页恢复原文，用户页翻译保留",
-        "passed": true
-      },
-      {
-        "name": "恢复原文不成功时取消，无模型请求",
-        "passed": true
-      },
-      {
-        "name": "译文副本和隐藏原文，三角色原文与默认收起卡片",
-        "passed": true
-      },
-      {
-        "name": "主题帖缺失时继续补齐，不当直接父帖为根",
-        "passed": true
-      },
-      {
-        "name": "仅剩译文提示错误并阻止请求，原文显示后重试",
-        "passed": true
-      },
-      {
-        "name": "加载仅阶段动效、计时上限与取消",
-        "passed": true
-      },
-      {
-        "name": "X / Reddit 现有按钮及自定义选区即时切换语言",
         "passed": true
       }
     ]
@@ -442,5 +446,44 @@
     "readmeLinksVerified": true,
     "imageVisuallyReviewed": true,
     "nativeFullCaptureLimitation": "Native node export offset; reconnected native action returned AXError.notImplemented"
+  },
+  "liveReddit": {
+    "date": "2026-10-16",
+    "status": "two actual Dia cases passed full context retest",
+    "extensionVersion": "0.3.4",
+    "manualContext": false,
+    "automaticRetry": false,
+    "paidCallsBeforeFix": 2,
+    "paidCallsAfterFix": 2,
+    "intermediateReadOnlyFailure": "Root id and modern URLs fixed, but native top-level comment lacked parentid; no paid request sent; depth=0/postid verified and fixed.",
+    "hero": {
+      "url": "https://www.reddit.com/r/programming/comments/14trtla/comment/jr5oxw4/",
+      "roles": [
+        "current",
+        "parent",
+        "root"
+      ],
+      "uniqueSources": 3,
+      "elapsedSeconds": 12.1,
+      "totalTokens": 2605,
+      "summary": "回复引用“没有人类会写这种愚蠢无意义评论”的说法，并用“oh sweet summer child”讥讽其太天真。"
+    },
+    "slang": {
+      "url": "https://www.reddit.com/r/SideProject/comments/1kfbfcr/comment/mrddkmx/",
+      "roles": [
+        "current",
+        "parent",
+        "root"
+      ],
+      "uniqueSources": 2,
+      "parentEqualsRoot": true,
+      "elapsedSeconds": 5.7,
+      "totalTokens": 1568,
+      "summary": "这则回复在夸赞对方刚发布的首个 iOS 应用很棒，并用“Great man!”表示祝贺。"
+    },
+    "model": "DeepSeek V4.1 Flash",
+    "textOnly": true,
+    "knownAgentCallsMinimum": 11,
+    "initialBudget": 20
   }
 }

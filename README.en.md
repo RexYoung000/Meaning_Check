@@ -25,7 +25,9 @@ Source: [Al Tanto's public reply](https://x.com/Altantoo19/status/21103200215703
 
 ## Install and start
 
-The current version is **0.3.3 POC**. Build it from source; there is no store release or published Release installer yet.
+The current version is **0.3.4 POC**. Build it from source; there is no store release or published Release installer yet.
+
+0.3.4 fixes native Reddit root identifiers and modern comment links. When an explicit parent chain is present on the page, one click uses the reply, its direct parent, and the thread starter. Missing context is still reported.
 
 0.3.3 simplifies result cards and loading text and renames the action to Identify intent. On translated X pages it reads retained original text. Continuous reply chains now retain both the direct reply target and the thread starter across different layout wrappers.
 
@@ -44,7 +46,7 @@ pnpm build
 4. Set interface and analysis languages in **Languages**, and manage enabled origins and paths in **Websites**.
 5. Refresh X / Reddit and click **Identify intent**. On custom sites, select text, confirm optional background, then analyze.
 
-For an existing install, update the build, reload the extension, confirm 0.3.3, and refresh the page. If the browser loaded a separately extracted copy, update that copy first; editing the source directory alone will not update it. Preserve the extension path / ID so local settings survive.
+For an existing install, update the build, reload the extension, confirm 0.3.4, and refresh the page. If the browser loaded a separately extracted copy, update that copy first; editing the source directory alone will not update it. Preserve the extension path / ID so local settings survive.
 
 ## How missing context is determined
 
@@ -81,7 +83,7 @@ pnpm test:e2e
 pnpm check:package
 ```
 
-Use `pnpm dev` for development and `pnpm zip` for `.output/meaning-check-0.3.3-chrome.zip`. Edit `public/icon.svg` and run `pnpm icons` to regenerate PNGs. Builds include root LICENSE automatically.
+Use `pnpm dev` for development and `pnpm zip` for `.output/meaning-check-0.3.4-chrome.zip`. Edit `public/icon.svg` and run `pnpm icons` to regenerate PNGs. Builds include root LICENSE automatically.
 
 Tests use disposable isolated browser profiles and mock APIs, not personal browser data. Passing automation does not prove live provider quality. Actual results and remaining acceptance items are recorded in [verification notes](documentation/tests.md).
 
